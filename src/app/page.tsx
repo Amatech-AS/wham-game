@@ -91,12 +91,16 @@ export default function Home() {
         
         {/* Hero Section */}
         <div className="text-center py-12 md:py-16 relative">
-          {/* Balanced Christmas Gradient: Green -> Red -> Green */}
-          <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-700 via-red-600 to-emerald-700 mb-4 tracking-tighter break-words drop-shadow-sm">
+          {/* 
+              GOLDEN TITLE:
+              We use a gradient from Amber-600 (Dark Gold) to Yellow-300 (Light Gold) to Amber-500.
+              We add a Drop Shadow to make it pop against the white background.
+          */}
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-b from-amber-500 via-yellow-400 to-amber-600 mb-4 tracking-tighter break-words drop-shadow-[0_2px_2px_rgba(180,83,9,0.4)]">
             WHAMAGEDDON
           </h1>
           
-          {/* Sync Button - Neutral with Green Icon */}
+          {/* Sync Button */}
           <div className="absolute top-0 right-0 md:top-4 md:right-4">
             <button onClick={() => setShowSync(!showSync)} className="flex items-center gap-2 text-xs font-bold text-slate-600 bg-white px-4 py-2 rounded-full hover:bg-slate-100 transition-all border border-slate-200 shadow-sm">
               <Smartphone size={14} className="text-emerald-600" /> {showSync ? 'Close Sync' : 'Sync Device'}
@@ -123,7 +127,7 @@ export default function Home() {
         {/* MAIN CONTENT */}
         <div className="flex flex-col-reverse md:grid md:grid-cols-2 gap-12 items-start">
           
-          {/* CREATE CARD - NOW GREEN (Inviting) */}
+          {/* CREATE CARD */}
           <div className="bg-white p-8 rounded-3xl shadow-xl shadow-emerald-100 border border-emerald-50 w-full">
             <h2 className="text-2xl font-bold mb-6 flex items-center gap-2 text-emerald-800">
               <Building2 className="text-emerald-500" /> Start New Group
@@ -146,7 +150,7 @@ export default function Home() {
             </form>
           </div>
 
-          {/* ACTIVE GROUPS LIST - RED ACCENTS (Christmas Balls) */}
+          {/* ACTIVE GROUPS LIST */}
           <div className="w-full">
             <h2 className="text-2xl font-bold mb-6 flex items-center gap-2 text-slate-700">
               <Users className="text-red-500" /> Active Groups
@@ -172,7 +176,7 @@ export default function Home() {
 
         </div>
 
-        {/* STATS BAR - MIXED */}
+        {/* STATS BAR */}
         <div className="mt-16 border-t border-slate-200 pt-12">
           <div className="flex flex-wrap justify-center gap-4 md:gap-8">
             <div className="bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-3">
