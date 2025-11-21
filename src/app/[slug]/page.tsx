@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import confetti from 'canvas-confetti';
 import { createClient } from '@supabase/supabase-js';
-import { User, Building, Skull, Trophy, Settings, Save } from 'lucide-react';
+import { User, Building, Skull, Trophy, Settings, ArrowLeft, Home } from 'lucide-react';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://example.supabase.co';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'example-key';
@@ -11,6 +11,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 type Player = { 
   id: string; 
+  user_id?: string; // New Global ID
   name: string; 
   company?: string;
   avatar_url?: string;
@@ -20,35 +21,56 @@ type Player = {
 
 export default function GroupPage() {
   const params = useParams();
+  const router = useRouter();
   const slug = params.slug;
+  
   const [groupName, setGroupName] = useState('');
   const [players, setPlayers] = useState<Player[]>([]);
   const [myPlayerId, setMyPlayerId] = useState<string | null>(null);
+  const [globalUserId, setGlobalUserId] = useState<string | null>(null);
   
-  // Join / Edit Form State
   const [formData, setFormData] = useState({ name: '', company: '', avatar_url: '' });
   const [isEditing, setIsEditing] = useState(false);
 
-  // Load Data
+  // 1. Initialize User
+  useEffect(() => {
+    // Ensure Global ID exists
+    let uid = localStorage.getItem('wham_global_user_id');
+    if (!uid) {
+      uid = crypto.randomUUID();
+      localStorage.setItem('wham_global_user_id', uid);
+    }
+    setGlobalUserId(uid);
+  }, []);
+
+  // 2. Fetch Data & Realtime
   const fetchGroupData = async () => {
     const { data: group } = await supabase.from('groups').select('name').eq('slug', slug).single();
     if (group) setGroupName(group.name);
-    const { data: p } = await supabase.from('players').select('*').eq('group_slug', slug).order('whammed_at', { ascending: false, nullsFirst: true });
-    if (p) setPlayers(p);
+    
+    const { data: p } = await supabase.from('players')
+      .select('*')
+      .eq('group_slug', slug)
+      .order('whammed_at', { ascending: false, nullsFirst: true });
+    
+    if (p) {
+      setPlayers(p);
+      // Identify ME based on Global User ID
+      const uid = localStorage.getItem('wham_global_user_id');
+      const me = p.find(player => player.user_id === uid);
+      if (me) setMyPlayerId(me.id);
+    }
   };
 
   useEffect(() => {
-    const storedId = localStorage.getItem(`wham_player_${slug}`);
-    if (storedId) setMyPlayerId(storedId);
     fetchGroupData();
-
     const channel = supabase.channel('realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, () => fetchGroupData())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [slug]);
+  }, [slug, globalUserId]); // Re-run when globalUserId is set
 
-  // Pre-fill form if editing
+  // 3. Pre-fill Form
   useEffect(() => {
     if (myPlayerId && players.length > 0) {
       const me = players.find(p => p.id === myPlayerId);
@@ -60,8 +82,10 @@ export default function GroupPage() {
     e.preventDefault();
     if (!formData.name) return;
 
+    const uid = localStorage.getItem('wham_global_user_id');
+
     if (myPlayerId) {
-      // Update existing profile
+      // Update specific row in this group
       await supabase.from('players').update({ 
         name: formData.name, 
         company: formData.company, 
@@ -69,26 +93,44 @@ export default function GroupPage() {
       }).eq('id', myPlayerId);
       setIsEditing(false);
     } else {
-      // Join new
+      // JOIN NEW
+      // Check if user is already "Whammed" in another group to keep status consistent
+      const { data: existingUser } = await supabase.from('players')
+        .select('status')
+        .eq('user_id', uid)
+        .eq('status', 'whammed')
+        .limit(1);
+
+      const initialStatus = (existingUser && existingUser.length > 0) ? 'whammed' : 'alive';
+      const whammedTime = (initialStatus === 'whammed') ? new Date() : null;
+
       const { data } = await supabase.from('players').insert([{ 
         group_slug: slug, 
+        user_id: uid, // Link to Global ID
         name: formData.name, 
         company: formData.company,
-        avatar_url: formData.avatar_url 
+        avatar_url: formData.avatar_url,
+        status: initialStatus,
+        whammed_at: whammedTime
       }]).select().single();
       
       if (data) {
-        localStorage.setItem(`wham_player_${slug}`, data.id);
         setMyPlayerId(data.id);
-        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        if (initialStatus === 'alive') confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
       }
     }
     fetchGroupData();
   };
 
   const iGotWhammed = async () => {
-    if (!confirm("Are you sure? There is no going back.")) return;
-    await supabase.from('players').update({ status: 'whammed', whammed_at: new Date() }).eq('id', myPlayerId);
+    if (!confirm("Are you sure? This will mark you as OUT in ALL your teams.")) return;
+    
+    const uid = localStorage.getItem('wham_global_user_id');
+    
+    // UPDATE ALL TEAMS WHERE THIS USER EXISTS
+    await supabase.from('players')
+      .update({ status: 'whammed', whammed_at: new Date() })
+      .eq('user_id', uid);
   };
 
   const survivors = players.filter(p => p.status === 'alive');
@@ -99,15 +141,22 @@ export default function GroupPage() {
     <main className="min-h-screen bg-slate-50 text-slate-800 p-4 md:p-8 font-sans">
       <div className="max-w-4xl mx-auto">
         
-        {/* Header */}
-        <div className="flex justify-between items-end mb-8">
-          <div>
-            <h2 className="text-xs font-bold text-indigo-500 uppercase tracking-widest">Whamageddon</h2>
-            <h1 className="text-3xl md:text-5xl font-black text-slate-900">{groupName || 'Loading...'}</h1>
-          </div>
+        {/* Header Navigation */}
+        <div className="flex justify-between items-center mb-8">
+          <button 
+            onClick={() => router.push('/')} 
+            className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 transition-colors font-bold text-sm uppercase tracking-wider"
+          >
+            <ArrowLeft size={18} /> Back to Home
+          </button>
+          
           <button onClick={() => {navigator.clipboard.writeText(window.location.href); alert('Copied!');}} className="bg-white px-4 py-2 rounded-full text-sm font-bold shadow-sm hover:shadow-md transition-all">
             Share Link 🔗
           </button>
+        </div>
+
+        <div className="text-center mb-10">
+           <h1 className="text-4xl md:text-5xl font-black text-slate-900">{groupName || 'Loading...'}</h1>
         </div>
 
         {/* ACTION AREA */}
@@ -116,7 +165,7 @@ export default function GroupPage() {
             <div className="bg-white border border-slate-200 p-8 rounded-3xl shadow-xl shadow-indigo-100/50">
               <h3 className="text-2xl font-bold text-slate-800 mb-6 flex items-center gap-2">
                 {isEditing ? <Settings className="text-slate-400"/> : <User className="text-indigo-500"/>} 
-                {isEditing ? 'Edit Profile' : 'Join the Game'}
+                {isEditing ? 'Edit Profile' : 'Join this Team'}
               </h3>
               
               <form onSubmit={handleJoinOrUpdate} className="space-y-4">
@@ -137,7 +186,6 @@ export default function GroupPage() {
                   <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Profile Picture URL (Optional)</label>
                   <input className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 text-sm outline-none focus:border-indigo-400" 
                     value={formData.avatar_url} onChange={e => setFormData({...formData, avatar_url: e.target.value})} placeholder="https://..." />
-                  <p className="text-xs text-slate-400 mt-1">Tip: Right-click your LinkedIn photo and 'Copy Image Address'</p>
                 </div>
 
                 <div className="flex gap-3 pt-2">
@@ -161,7 +209,7 @@ export default function GroupPage() {
                   <div className="inline-block p-3 bg-emerald-100 rounded-full text-emerald-600 mb-4"><Trophy size={32} /></div>
                   <h3 className="text-3xl font-black text-emerald-800 mb-1">You are Safe</h3>
                   <p className="text-emerald-600 mb-6 font-medium">Don't let your guard down.</p>
-                  <button onClick={iGotWhammed} className="bg-white text-rose-500 hover:bg-rose-50 border-2 border-rose-200 px-8 py-3 rounded-xl font-bold transition-all">
+                  <button onClick={iGotWhammed} className="bg-white text-rose-500 hover:bg-rose-50 border-2 border-rose-200 px-8 py-3 rounded-xl font-bold transition-all shadow-sm hover:shadow-md">
                     I Heard It! (Report Defeat)
                   </button>
                 </>
@@ -169,7 +217,8 @@ export default function GroupPage() {
                 <>
                   <div className="inline-block p-3 bg-slate-200 rounded-full text-slate-500 mb-4"><Skull size={32} /></div>
                   <h3 className="text-3xl font-black text-slate-600 mb-1">You are Out</h3>
-                  <p className="text-slate-400">Fallen on {new Date(me?.whammed_at || '').toLocaleDateString()}</p>
+                  <p className="text-slate-400">You were Whammed on {new Date(me?.whammed_at || '').toLocaleDateString()}</p>
+                  <p className="text-xs text-rose-400 mt-2 font-bold uppercase tracking-wide">This applies to all your teams</p>
                 </>
               )}
             </div>
