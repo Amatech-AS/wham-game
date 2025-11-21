@@ -3,21 +3,13 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import confetti from 'canvas-confetti';
 import { createClient } from '@supabase/supabase-js';
-import { User, Building, Skull, Trophy, Settings, ArrowLeft, Home } from 'lucide-react';
+import { User, Building, Skull, Trophy, Settings, ArrowLeft, Lock } from 'lucide-react';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://example.supabase.co';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'example-key';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-type Player = { 
-  id: string; 
-  user_id?: string; // New Global ID
-  name: string; 
-  company?: string;
-  avatar_url?: string;
-  status: 'alive' | 'whammed'; 
-  whammed_at: string; 
-};
+type Player = { id: string; user_id?: string; name: string; company?: string; avatar_url?: string; secret_pin?: string; status: 'alive' | 'whammed'; whammed_at: string; };
 
 export default function GroupPage() {
   const params = useParams();
@@ -29,33 +21,22 @@ export default function GroupPage() {
   const [myPlayerId, setMyPlayerId] = useState<string | null>(null);
   const [globalUserId, setGlobalUserId] = useState<string | null>(null);
   
-  const [formData, setFormData] = useState({ name: '', company: '', avatar_url: '' });
+  const [formData, setFormData] = useState({ name: '', company: '', avatar_url: '', pin: '' });
   const [isEditing, setIsEditing] = useState(false);
 
-  // 1. Initialize User
   useEffect(() => {
-    // Ensure Global ID exists
     let uid = localStorage.getItem('wham_global_user_id');
-    if (!uid) {
-      uid = crypto.randomUUID();
-      localStorage.setItem('wham_global_user_id', uid);
-    }
+    if (!uid) { uid = crypto.randomUUID(); localStorage.setItem('wham_global_user_id', uid || ''); }
     setGlobalUserId(uid);
   }, []);
 
-  // 2. Fetch Data & Realtime
   const fetchGroupData = async () => {
     const { data: group } = await supabase.from('groups').select('name').eq('slug', slug).single();
     if (group) setGroupName(group.name);
     
-    const { data: p } = await supabase.from('players')
-      .select('*')
-      .eq('group_slug', slug)
-      .order('whammed_at', { ascending: false, nullsFirst: true });
-    
+    const { data: p } = await supabase.from('players').select('*').eq('group_slug', slug).order('whammed_at', { ascending: false, nullsFirst: true });
     if (p) {
       setPlayers(p);
-      // Identify ME based on Global User ID
       const uid = localStorage.getItem('wham_global_user_id');
       const me = p.find(player => player.user_id === uid);
       if (me) setMyPlayerId(me.id);
@@ -64,54 +45,32 @@ export default function GroupPage() {
 
   useEffect(() => {
     fetchGroupData();
-    const channel = supabase.channel('realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, () => fetchGroupData())
-      .subscribe();
+    const channel = supabase.channel('realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, () => fetchGroupData()).subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [slug, globalUserId]); // Re-run when globalUserId is set
+  }, [slug, globalUserId]);
 
-  // 3. Pre-fill Form
   useEffect(() => {
     if (myPlayerId && players.length > 0) {
       const me = players.find(p => p.id === myPlayerId);
-      if (me) setFormData({ name: me.name, company: me.company || '', avatar_url: me.avatar_url || '' });
+      if (me) setFormData({ name: me.name, company: me.company || '', avatar_url: me.avatar_url || '', pin: me.secret_pin || '' });
     }
   }, [myPlayerId, players, isEditing]);
 
   const handleJoinOrUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name) return;
-
+    if (!formData.name || !formData.pin) { alert("Name and PIN are required!"); return; }
     const uid = localStorage.getItem('wham_global_user_id');
 
     if (myPlayerId) {
-      // Update specific row in this group
-      await supabase.from('players').update({ 
-        name: formData.name, 
-        company: formData.company, 
-        avatar_url: formData.avatar_url 
-      }).eq('id', myPlayerId);
+      await supabase.from('players').update({ name: formData.name, company: formData.company, avatar_url: formData.avatar_url, secret_pin: formData.pin }).eq('id', myPlayerId);
       setIsEditing(false);
     } else {
-      // JOIN NEW
-      // Check if user is already "Whammed" in another group to keep status consistent
-      const { data: existingUser } = await supabase.from('players')
-        .select('status')
-        .eq('user_id', uid)
-        .eq('status', 'whammed')
-        .limit(1);
-
+      // Check global status
+      const { data: existingUser } = await supabase.from('players').select('status').eq('user_id', uid).eq('status', 'whammed').limit(1);
       const initialStatus = (existingUser && existingUser.length > 0) ? 'whammed' : 'alive';
-      const whammedTime = (initialStatus === 'whammed') ? new Date() : null;
-
+      
       const { data } = await supabase.from('players').insert([{ 
-        group_slug: slug, 
-        user_id: uid, // Link to Global ID
-        name: formData.name, 
-        company: formData.company,
-        avatar_url: formData.avatar_url,
-        status: initialStatus,
-        whammed_at: whammedTime
+        group_slug: slug, user_id: uid, name: formData.name, company: formData.company, avatar_url: formData.avatar_url, secret_pin: formData.pin, status: initialStatus, whammed_at: (initialStatus === 'whammed' ? new Date() : null)
       }]).select().single();
       
       if (data) {
@@ -124,13 +83,8 @@ export default function GroupPage() {
 
   const iGotWhammed = async () => {
     if (!confirm("Are you sure? This will mark you as OUT in ALL your teams.")) return;
-    
     const uid = localStorage.getItem('wham_global_user_id');
-    
-    // UPDATE ALL TEAMS WHERE THIS USER EXISTS
-    await supabase.from('players')
-      .update({ status: 'whammed', whammed_at: new Date() })
-      .eq('user_id', uid);
+    await supabase.from('players').update({ status: 'whammed', whammed_at: new Date() }).eq('user_id', uid);
   };
 
   const survivors = players.filter(p => p.status === 'alive');
@@ -140,26 +94,17 @@ export default function GroupPage() {
   return (
     <main className="min-h-screen bg-slate-50 text-slate-800 p-4 md:p-8 font-sans">
       <div className="max-w-4xl mx-auto">
-        
-        {/* Header Navigation */}
         <div className="flex justify-between items-center mb-8">
-          <button 
-            onClick={() => router.push('/')} 
-            className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 transition-colors font-bold text-sm uppercase tracking-wider"
-          >
+          <button onClick={() => router.push('/')} className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 transition-colors font-bold text-sm uppercase tracking-wider">
             <ArrowLeft size={18} /> Back to Home
           </button>
-          
-          <button onClick={() => {navigator.clipboard.writeText(window.location.href); alert('Copied!');}} className="bg-white px-4 py-2 rounded-full text-sm font-bold shadow-sm hover:shadow-md transition-all">
-            Share Link 🔗
-          </button>
+          <button onClick={() => {navigator.clipboard.writeText(window.location.href); alert('Copied!');}} className="bg-white px-4 py-2 rounded-full text-sm font-bold shadow-sm hover:shadow-md transition-all">Share Link 🔗</button>
         </div>
 
         <div className="text-center mb-10">
            <h1 className="text-4xl md:text-5xl font-black text-slate-900">{groupName || 'Loading...'}</h1>
         </div>
 
-        {/* ACTION AREA */}
         <div className="mb-12">
           {!myPlayerId || isEditing ? (
             <div className="bg-white border border-slate-200 p-8 rounded-3xl shadow-xl shadow-indigo-100/50">
@@ -167,27 +112,26 @@ export default function GroupPage() {
                 {isEditing ? <Settings className="text-slate-400"/> : <User className="text-indigo-500"/>} 
                 {isEditing ? 'Edit Profile' : 'Join this Team'}
               </h3>
-              
               <form onSubmit={handleJoinOrUpdate} className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Your Name</label>
-                    <input className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 font-semibold outline-none focus:border-indigo-400" 
-                      value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="e.g. John Doe" required />
+                    <input className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 font-semibold outline-none focus:border-indigo-400" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="e.g. John Doe" required />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Company / Dept</label>
-                    <input className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 font-semibold outline-none focus:border-indigo-400" 
-                      value={formData.company} onChange={e => setFormData({...formData, company: e.target.value})} placeholder="e.g. Sales" />
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Secret PIN (4 Digits)</label>
+                    <input className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 font-semibold outline-none focus:border-indigo-400" value={formData.pin} onChange={e => setFormData({...formData, pin: e.target.value})} placeholder="e.g. 1234" maxLength={4} required />
+                    <p className="text-[10px] text-slate-400 mt-1">Remember this to sync other devices!</p>
                   </div>
                 </div>
-                
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Profile Picture URL (Optional)</label>
-                  <input className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 text-sm outline-none focus:border-indigo-400" 
-                    value={formData.avatar_url} onChange={e => setFormData({...formData, avatar_url: e.target.value})} placeholder="https://..." />
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Company / Dept</label>
+                  <input className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 font-semibold outline-none focus:border-indigo-400" value={formData.company} onChange={e => setFormData({...formData, company: e.target.value})} placeholder="e.g. Sales" />
                 </div>
-
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Profile Picture URL</label>
+                  <input className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 text-sm outline-none focus:border-indigo-400" value={formData.avatar_url} onChange={e => setFormData({...formData, avatar_url: e.target.value})} placeholder="https://..." />
+                </div>
                 <div className="flex gap-3 pt-2">
                   <button className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold shadow-lg shadow-indigo-200 transition-all">
                     {isEditing ? 'Save Changes' : 'Join Game'}
@@ -197,27 +141,20 @@ export default function GroupPage() {
               </form>
             </div>
           ) : (
-            // STATUS CARD
             <div className={`relative overflow-hidden rounded-3xl p-8 text-center border-2 ${me?.status === 'alive' ? 'bg-emerald-50 border-emerald-100' : 'bg-slate-100 border-slate-200'}`}>
-              
-              <button onClick={() => setIsEditing(true)} className="absolute top-4 right-4 p-2 bg-white/50 hover:bg-white rounded-full transition-all">
-                <Settings size={18} className="text-slate-500" />
-              </button>
-
+              <button onClick={() => setIsEditing(true)} className="absolute top-4 right-4 p-2 bg-white/50 hover:bg-white rounded-full transition-all"><Settings size={18} className="text-slate-500" /></button>
               {me?.status === 'alive' ? (
                 <>
                   <div className="inline-block p-3 bg-emerald-100 rounded-full text-emerald-600 mb-4"><Trophy size={32} /></div>
                   <h3 className="text-3xl font-black text-emerald-800 mb-1">You are Safe</h3>
                   <p className="text-emerald-600 mb-6 font-medium">Don't let your guard down.</p>
-                  <button onClick={iGotWhammed} className="bg-white text-rose-500 hover:bg-rose-50 border-2 border-rose-200 px-8 py-3 rounded-xl font-bold transition-all shadow-sm hover:shadow-md">
-                    I Heard It! (Report Defeat)
-                  </button>
+                  <button onClick={iGotWhammed} className="bg-white text-rose-500 hover:bg-rose-50 border-2 border-rose-200 px-8 py-3 rounded-xl font-bold transition-all shadow-sm hover:shadow-md">I Heard It! (Report Defeat)</button>
                 </>
               ) : (
                 <>
                   <div className="inline-block p-3 bg-slate-200 rounded-full text-slate-500 mb-4"><Skull size={32} /></div>
                   <h3 className="text-3xl font-black text-slate-600 mb-1">You are Out</h3>
-                  <p className="text-slate-400">You were Whammed on {new Date(me?.whammed_at || '').toLocaleDateString()}</p>
+                  <p className="text-slate-400">Whammed on {new Date(me?.whammed_at || '').toLocaleDateString()}</p>
                   <p className="text-xs text-rose-400 mt-2 font-bold uppercase tracking-wide">This applies to all your teams</p>
                 </>
               )}
@@ -225,9 +162,7 @@ export default function GroupPage() {
           )}
         </div>
 
-        {/* ROSTER */}
         <div className="grid md:grid-cols-2 gap-8">
-          {/* Alive Column */}
           <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
             <h3 className="text-emerald-500 font-bold uppercase tracking-wider text-xs mb-6 flex justify-between">
               <span>Survivors</span> <span className="bg-emerald-100 px-2 py-0.5 rounded-full">{survivors.length}</span>
@@ -235,21 +170,12 @@ export default function GroupPage() {
             <div className="space-y-4">
               {survivors.map(p => (
                 <div key={p.id} className="flex items-center gap-4">
-                  {p.avatar_url ? (
-                    <img src={p.avatar_url} className="w-10 h-10 rounded-full object-cover border-2 border-emerald-200" />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold">{p.name.charAt(0)}</div>
-                  )}
-                  <div>
-                    <div className="font-bold text-slate-700">{p.name}</div>
-                    {p.company && <div className="text-xs text-slate-400 flex items-center gap-1"><Building size={10}/> {p.company}</div>}
-                  </div>
+                  {p.avatar_url ? <img src={p.avatar_url} className="w-10 h-10 rounded-full object-cover border-2 border-emerald-200" /> : <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold">{p.name.charAt(0)}</div>}
+                  <div><div className="font-bold text-slate-700">{p.name}</div>{p.company && <div className="text-xs text-slate-400 flex items-center gap-1"><Building size={10}/> {p.company}</div>}</div>
                 </div>
               ))}
             </div>
           </div>
-
-          {/* Dead Column */}
           <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200">
             <h3 className="text-rose-400 font-bold uppercase tracking-wider text-xs mb-6 flex justify-between">
               <span>Whamhalla</span> <span className="bg-rose-100 px-2 py-0.5 rounded-full">{fallen.length}</span>
@@ -257,21 +183,13 @@ export default function GroupPage() {
             <div className="space-y-4 opacity-70 grayscale">
               {fallen.map(p => (
                 <div key={p.id} className="flex items-center gap-4">
-                   {p.avatar_url ? (
-                    <img src={p.avatar_url} className="w-10 h-10 rounded-full object-cover border-2 border-slate-300" />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 font-bold">💀</div>
-                  )}
-                  <div>
-                    <div className="font-bold text-slate-600 line-through">{p.name}</div>
-                    <div className="text-xs text-slate-400">{new Date(p.whammed_at).toLocaleDateString()}</div>
-                  </div>
+                   {p.avatar_url ? <img src={p.avatar_url} className="w-10 h-10 rounded-full object-cover border-2 border-slate-300" /> : <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 font-bold">💀</div>}
+                  <div><div className="font-bold text-slate-600 line-through">{p.name}</div><div className="text-xs text-slate-400">{new Date(p.whammed_at).toLocaleDateString()}</div></div>
                 </div>
               ))}
             </div>
           </div>
         </div>
-
       </div>
     </main>
   );
