@@ -41,8 +41,14 @@ export default function Home() {
 
     // 3. Fetch Data
     const fetchData = async () => {
-      const { data: groups } = await supabase.from('groups').select('*').order('created_at', { ascending: false });
+      // CHANGED: Sort by name ascending (A-Z)
+      const { data: groups } = await supabase
+        .from('groups')
+        .select('*')
+        .order('name', { ascending: true });
+      
       if (groups) setActiveGroups(groups);
+      
       const { data: statData } = await supabase.rpc('get_global_stats');
       if (statData) setStats(statData);
     };
@@ -85,7 +91,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-800 font-sans">
+    <main className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-20">
       <div className="max-w-5xl mx-auto p-6">
         
         {/* Hero Section */}
@@ -116,9 +122,68 @@ export default function Home() {
               </form>
             </div>
           )}
+        </div>
 
-          {/* Stats Bar */}
-          <div className="flex flex-wrap justify-center gap-4 md:gap-8 mt-8 mb-8">
+        {/* 
+           MAIN CONTENT 
+           flex-col-reverse: Puts the bottom item (Active Groups) FIRST on mobile.
+           md:grid: On desktop, it switches to a grid where DOM order (Left/Right) is preserved.
+        */}
+        <div className="flex flex-col-reverse md:grid md:grid-cols-2 gap-12 items-start">
+          
+          {/* CREATE CARD (Left on Desktop, Bottom on Mobile) */}
+          <div className="bg-white p-8 rounded-3xl shadow-xl shadow-indigo-100 border border-indigo-50 w-full">
+            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+              <Building2 className="text-indigo-500" /> Start New Group
+            </h2>
+            <form onSubmit={createGroup}>
+              <div className="mb-6">
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Group Name</label>
+                <input 
+                  type="text" 
+                  value={groupName} 
+                  onChange={(e) => setGroupName(e.target.value)} 
+                  placeholder="e.g. The Accounting Team" 
+                  className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-400 outline-none font-semibold transition-all" 
+                  required 
+                />
+              </div>
+              <button disabled={loading} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-indigo-200">
+                {loading ? 'Creating...' : 'Create & Start'}
+              </button>
+            </form>
+          </div>
+
+          {/* ACTIVE GROUPS LIST (Right on Desktop, Top on Mobile) */}
+          <div className="w-full">
+            {/* CHANGED: Renamed to Active Groups */}
+            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2 text-slate-700">
+              <Users className="text-purple-500" /> Active Groups
+            </h2>
+            
+            <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
+              {activeGroups.map(group => (
+                <div 
+                  key={group.id} 
+                  onClick={() => router.push(`/${group.slug}`)} 
+                  className="group bg-white p-5 rounded-2xl border border-slate-200 hover:border-purple-400 hover:shadow-md cursor-pointer transition-all flex justify-between items-center"
+                >
+                  <div>
+                    <h3 className="font-bold text-lg text-slate-800 group-hover:text-purple-600 transition-colors">{group.name}</h3>
+                    <p className="text-xs text-slate-400">Joined {new Date(group.created_at).toLocaleDateString()}</p>
+                  </div>
+                  <ArrowRight className="text-slate-300 group-hover:text-purple-500 transition-transform group-hover:translate-x-1" />
+                </div>
+              ))}
+              {activeGroups.length === 0 && <p className="text-slate-400 italic">No active groups yet.</p>}
+            </div>
+          </div>
+
+        </div>
+
+        {/* CHANGED: Stats Bar Moved to Bottom */}
+        <div className="mt-16 border-t border-slate-200 pt-12">
+          <div className="flex flex-wrap justify-center gap-4 md:gap-8">
             <div className="bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-3">
               <Timer className="text-indigo-500" />
               <div className="text-left">
@@ -138,41 +203,6 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-12 items-start">
-          {/* CREATE CARD */}
-          <div className="bg-white p-8 rounded-3xl shadow-xl shadow-indigo-100 border border-indigo-50">
-            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <Building2 className="text-indigo-500" /> Start New Group
-            </h2>
-            <form onSubmit={createGroup}>
-              <div className="mb-6">
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Group Name</label>
-                <input type="text" value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="e.g. The Accounting Team" className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-400 outline-none font-semibold transition-all" required />
-              </div>
-              <button disabled={loading} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-indigo-200">
-                {loading ? 'Creating...' : 'Create & Start'}
-              </button>
-            </form>
-          </div>
-
-          {/* ACTIVE TEAMS LIST */}
-          <div>
-            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2 text-slate-700">
-              <Users className="text-purple-500" /> Active Teams
-            </h2>
-            <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
-              {activeGroups.map(group => (
-                <div key={group.id} onClick={() => router.push(`/${group.slug}`)} className="group bg-white p-5 rounded-2xl border border-slate-200 hover:border-purple-400 hover:shadow-md cursor-pointer transition-all flex justify-between items-center">
-                  <div>
-                    <h3 className="font-bold text-lg text-slate-800 group-hover:text-purple-600 transition-colors">{group.name}</h3>
-                    <p className="text-xs text-slate-400">Joined {new Date(group.created_at).toLocaleDateString()}</p>
-                  </div>
-                  <ArrowRight className="text-slate-300 group-hover:text-purple-500 transition-transform group-hover:translate-x-1" />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
       </div>
     </main>
   );
