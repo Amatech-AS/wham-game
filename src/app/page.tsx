@@ -3,11 +3,11 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 
-// Use a fake placeholder if the real keys are missing during build
+// The safe connection
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://example.supabase.co';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'example-key';
-
 const supabase = createClient(supabaseUrl, supabaseKey);
+
 export default function Home() {
   const [groupName, setGroupName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -29,20 +29,36 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4">
-      <h1 className="text-6xl font-black text-red-500 mb-2">WHAMAGEDDON</h1>
-      <p className="text-slate-400 mb-8">Survival of the fittest.</p>
-      <form onSubmit={createGroup} className="w-full max-w-md bg-slate-800 p-8 rounded-xl border border-slate-700">
-        <input 
-          type="text" 
-          value={groupName}
-          onChange={(e) => setGroupName(e.target.value)}
-          placeholder="Group Name"
-          className="w-full p-3 rounded bg-slate-900 border border-slate-600 mb-4"
-          required
-        />
-        <button disabled={loading} className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded">
-          {loading ? 'Creating...' : 'Start'}
+    <main className="min-h-screen bg-white text-slate-800 flex flex-col items-center justify-center p-6 font-sans">
+      {/* Header Section */}
+      <div className="text-center mb-10">
+        <h1 className="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-teal-400 mb-4 tracking-tighter">
+          WHAMAGEDDON
+        </h1>
+        <p className="text-slate-400 text-lg font-medium">
+          Survival of the fittest. <span className="text-blue-500">Dec 1st - 24th.</span>
+        </p>
+      </div>
+
+      {/* Card Section */}
+      <form onSubmit={createGroup} className="w-full max-w-md bg-white p-8 rounded-3xl shadow-2xl shadow-blue-100 border border-slate-100 transition-all hover:shadow-blue-200">
+        <div className="mb-6">
+          <label className="block text-sm font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Group Name</label>
+          <input 
+            type="text" 
+            value={groupName}
+            onChange={(e) => setGroupName(e.target.value)}
+            placeholder="e.g. Marketing Team"
+            className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-blue-400 focus:bg-white outline-none text-lg font-semibold text-slate-700 transition-all placeholder:text-slate-300"
+            required
+          />
+        </div>
+        
+        <button 
+          disabled={loading} 
+          className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-500/30 transition-all transform active:scale-95"
+        >
+          {loading ? 'Creating...' : 'Start New Game'}
         </button>
       </form>
     </main>
