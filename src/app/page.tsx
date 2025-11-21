@@ -3,12 +3,11 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 
-// WE CREATE SUPABASE RIGHT HERE. NO IMPORTS.
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-);
+// Use a fake placeholder if the real keys are missing during build
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://example.supabase.co';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'example-key';
 
+const supabase = createClient(supabaseUrl, supabaseKey);
 export default function Home() {
   const [groupName, setGroupName] = useState('');
   const [loading, setLoading] = useState(false);
