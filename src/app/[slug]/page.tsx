@@ -93,15 +93,16 @@ export default function GroupPage() {
   return (
     <main className="min-h-screen bg-slate-50 text-slate-800 p-4 md:p-8 font-sans">
       <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <button onClick={() => router.push('/')} className="flex items-center gap-2 text-slate-500 hover:text-emerald-600 transition-colors font-bold text-sm uppercase tracking-wider">
-            <ArrowLeft size={18} /> Back to Home
-          </button>
+        <div className="flex justify-between items-end mb-8">
+          <div>
+             <button onClick={() => router.push('/')} className="flex items-center gap-2 text-slate-500 hover:text-emerald-600 transition-colors font-bold text-xs uppercase tracking-wider mb-4">
+              <ArrowLeft size={14} /> Back to Home
+            </button>
+            {/* SMALL GOLD LABEL */}
+            <h2 className="text-xs font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-yellow-400 uppercase tracking-widest mb-1">Whamageddon</h2>
+            <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight">{groupName || 'Loading...'}</h1>
+          </div>
           <button onClick={() => {navigator.clipboard.writeText(window.location.href); alert('Copied!');}} className="bg-white px-4 py-2 rounded-full text-sm font-bold shadow-sm hover:shadow-md transition-all text-emerald-600">Share Link 🔗</button>
-        </div>
-
-        <div className="text-center mb-10">
-           <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">{groupName || 'Loading...'}</h1>
         </div>
 
         <div className="mb-12">
