@@ -4,10 +4,11 @@ import { useParams } from 'next/navigation';
 import confetti from 'canvas-confetti';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-);
+// Use a fake placeholder if the real keys are missing during build
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://example.supabase.co';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'example-key';
+
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 type Player = { id: string; name: string; status: 'alive' | 'whammed'; whammed_at: string; };
 
