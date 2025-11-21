@@ -41,11 +41,10 @@ export default function Home() {
 
     // 3. Fetch Data
     const fetchData = async () => {
-      // CHANGED: Sort by name ascending (A-Z)
       const { data: groups } = await supabase
         .from('groups')
         .select('*')
-        .order('name', { ascending: true });
+        .order('name', { ascending: true }); // Sort A-Z
       
       if (groups) setActiveGroups(groups);
       
@@ -96,7 +95,8 @@ export default function Home() {
         
         {/* Hero Section */}
         <div className="text-center py-12 md:py-16 relative">
-          <h1 className="text-6xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500 mb-4 tracking-tighter">
+          {/* CHANGED: Sizing classes text-4xl (mobile) -> text-5xl (tablet) -> text-7xl (desktop) */}
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500 mb-4 tracking-tighter break-words">
             WHAMAGEDDON
           </h1>
           
@@ -124,11 +124,7 @@ export default function Home() {
           )}
         </div>
 
-        {/* 
-           MAIN CONTENT 
-           flex-col-reverse: Puts the bottom item (Active Groups) FIRST on mobile.
-           md:grid: On desktop, it switches to a grid where DOM order (Left/Right) is preserved.
-        */}
+        {/* MAIN CONTENT */}
         <div className="flex flex-col-reverse md:grid md:grid-cols-2 gap-12 items-start">
           
           {/* CREATE CARD (Left on Desktop, Bottom on Mobile) */}
@@ -156,7 +152,6 @@ export default function Home() {
 
           {/* ACTIVE GROUPS LIST (Right on Desktop, Top on Mobile) */}
           <div className="w-full">
-            {/* CHANGED: Renamed to Active Groups */}
             <h2 className="text-2xl font-bold mb-6 flex items-center gap-2 text-slate-700">
               <Users className="text-purple-500" /> Active Groups
             </h2>
@@ -181,7 +176,7 @@ export default function Home() {
 
         </div>
 
-        {/* CHANGED: Stats Bar Moved to Bottom */}
+        {/* STATS BAR (Bottom) */}
         <div className="mt-16 border-t border-slate-200 pt-12">
           <div className="flex flex-wrap justify-center gap-4 md:gap-8">
             <div className="bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-3">
