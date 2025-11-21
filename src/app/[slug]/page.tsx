@@ -74,7 +74,7 @@ export default function GroupPage() {
       
       if (data) {
         setMyPlayerId(data.id);
-        if (initialStatus === 'alive') confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#ef4444', '#10b981'] }); // Red/Green Confetti
+        if (initialStatus === 'alive') confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#ef4444', '#10b981'] });
       }
     }
     fetchGroupData();
@@ -106,7 +106,7 @@ export default function GroupPage() {
 
         <div className="mb-12">
           {!myPlayerId || isEditing ? (
-            <div className="bg-white border border-slate-200 p-8 rounded-3xl shadow-xl shadow-emerald-100/50">
+            <div className="bg-white border border-emerald-100 p-8 rounded-3xl shadow-xl shadow-emerald-100/50">
               <h3 className="text-2xl font-bold text-emerald-800 mb-6 flex items-center gap-2">
                 {isEditing ? <Settings className="text-slate-400"/> : <User className="text-emerald-500"/>} 
                 {isEditing ? 'Edit Profile' : 'Join this Team'}
