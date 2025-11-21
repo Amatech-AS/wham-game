@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import confetti from 'canvas-confetti';
 import { createClient } from '@supabase/supabase-js';
-import { User, Building, Skull, Trophy, Settings, ArrowLeft, Lock } from 'lucide-react';
+import { User, Building, Skull, Trophy, Settings, ArrowLeft } from 'lucide-react';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://example.supabase.co';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'example-key';
@@ -65,7 +65,6 @@ export default function GroupPage() {
       await supabase.from('players').update({ name: formData.name, company: formData.company, avatar_url: formData.avatar_url, secret_pin: formData.pin }).eq('id', myPlayerId);
       setIsEditing(false);
     } else {
-      // Check global status
       const { data: existingUser } = await supabase.from('players').select('status').eq('user_id', uid).eq('status', 'whammed').limit(1);
       const initialStatus = (existingUser && existingUser.length > 0) ? 'whammed' : 'alive';
       
@@ -75,7 +74,7 @@ export default function GroupPage() {
       
       if (data) {
         setMyPlayerId(data.id);
-        if (initialStatus === 'alive') confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        if (initialStatus === 'alive') confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#ef4444', '#10b981'] }); // Red/Green Confetti
       }
     }
     fetchGroupData();
@@ -95,45 +94,45 @@ export default function GroupPage() {
     <main className="min-h-screen bg-slate-50 text-slate-800 p-4 md:p-8 font-sans">
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <button onClick={() => router.push('/')} className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 transition-colors font-bold text-sm uppercase tracking-wider">
+          <button onClick={() => router.push('/')} className="flex items-center gap-2 text-slate-500 hover:text-emerald-600 transition-colors font-bold text-sm uppercase tracking-wider">
             <ArrowLeft size={18} /> Back to Home
           </button>
-          <button onClick={() => {navigator.clipboard.writeText(window.location.href); alert('Copied!');}} className="bg-white px-4 py-2 rounded-full text-sm font-bold shadow-sm hover:shadow-md transition-all">Share Link 🔗</button>
+          <button onClick={() => {navigator.clipboard.writeText(window.location.href); alert('Copied!');}} className="bg-white px-4 py-2 rounded-full text-sm font-bold shadow-sm hover:shadow-md transition-all text-emerald-600">Share Link 🔗</button>
         </div>
 
         <div className="text-center mb-10">
-           <h1 className="text-4xl md:text-5xl font-black text-slate-900">{groupName || 'Loading...'}</h1>
+           <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">{groupName || 'Loading...'}</h1>
         </div>
 
         <div className="mb-12">
           {!myPlayerId || isEditing ? (
-            <div className="bg-white border border-slate-200 p-8 rounded-3xl shadow-xl shadow-indigo-100/50">
-              <h3 className="text-2xl font-bold text-slate-800 mb-6 flex items-center gap-2">
-                {isEditing ? <Settings className="text-slate-400"/> : <User className="text-indigo-500"/>} 
+            <div className="bg-white border border-slate-200 p-8 rounded-3xl shadow-xl shadow-emerald-100/50">
+              <h3 className="text-2xl font-bold text-emerald-800 mb-6 flex items-center gap-2">
+                {isEditing ? <Settings className="text-slate-400"/> : <User className="text-emerald-500"/>} 
                 {isEditing ? 'Edit Profile' : 'Join this Team'}
               </h3>
               <form onSubmit={handleJoinOrUpdate} className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Your Name</label>
-                    <input className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 font-semibold outline-none focus:border-indigo-400" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="e.g. John Doe" required />
+                    <input className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 font-semibold outline-none focus:border-emerald-400" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="e.g. John Doe" required />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Secret PIN (4 Digits)</label>
-                    <input className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 font-semibold outline-none focus:border-indigo-400" value={formData.pin} onChange={e => setFormData({...formData, pin: e.target.value})} placeholder="e.g. 1234" maxLength={4} required />
+                    <input className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 font-semibold outline-none focus:border-emerald-400" value={formData.pin} onChange={e => setFormData({...formData, pin: e.target.value})} placeholder="e.g. 1234" maxLength={4} required />
                     <p className="text-[10px] text-slate-400 mt-1">Remember this to sync other devices!</p>
                   </div>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Company / Dept</label>
-                  <input className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 font-semibold outline-none focus:border-indigo-400" value={formData.company} onChange={e => setFormData({...formData, company: e.target.value})} placeholder="e.g. Sales" />
+                  <input className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 font-semibold outline-none focus:border-emerald-400" value={formData.company} onChange={e => setFormData({...formData, company: e.target.value})} placeholder="e.g. Sales" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Profile Picture URL</label>
-                  <input className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 text-sm outline-none focus:border-indigo-400" value={formData.avatar_url} onChange={e => setFormData({...formData, avatar_url: e.target.value})} placeholder="https://..." />
+                  <input className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 text-sm outline-none focus:border-emerald-400" value={formData.avatar_url} onChange={e => setFormData({...formData, avatar_url: e.target.value})} placeholder="https://..." />
                 </div>
                 <div className="flex gap-3 pt-2">
-                  <button className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold shadow-lg shadow-indigo-200 transition-all">
+                  <button className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold shadow-lg shadow-emerald-200 transition-all">
                     {isEditing ? 'Save Changes' : 'Join Game'}
                   </button>
                   {isEditing && <button type="button" onClick={() => setIsEditing(false)} className="px-6 py-3 bg-slate-100 rounded-xl font-bold text-slate-500">Cancel</button>}
@@ -141,21 +140,21 @@ export default function GroupPage() {
               </form>
             </div>
           ) : (
-            <div className={`relative overflow-hidden rounded-3xl p-8 text-center border-2 ${me?.status === 'alive' ? 'bg-emerald-50 border-emerald-100' : 'bg-slate-100 border-slate-200'}`}>
+            <div className={`relative overflow-hidden rounded-3xl p-8 text-center border-2 ${me?.status === 'alive' ? 'bg-emerald-50 border-emerald-100' : 'bg-red-50 border-red-200'}`}>
               <button onClick={() => setIsEditing(true)} className="absolute top-4 right-4 p-2 bg-white/50 hover:bg-white rounded-full transition-all"><Settings size={18} className="text-slate-500" /></button>
               {me?.status === 'alive' ? (
                 <>
                   <div className="inline-block p-3 bg-emerald-100 rounded-full text-emerald-600 mb-4"><Trophy size={32} /></div>
                   <h3 className="text-3xl font-black text-emerald-800 mb-1">You are Safe</h3>
                   <p className="text-emerald-600 mb-6 font-medium">Don't let your guard down.</p>
-                  <button onClick={iGotWhammed} className="bg-white text-rose-500 hover:bg-rose-50 border-2 border-rose-200 px-8 py-3 rounded-xl font-bold transition-all shadow-sm hover:shadow-md">I Heard It! (Report Defeat)</button>
+                  <button onClick={iGotWhammed} className="bg-white text-red-600 hover:bg-red-50 border-2 border-red-200 px-8 py-3 rounded-xl font-bold transition-all shadow-sm hover:shadow-md">I Heard It! (Report Defeat)</button>
                 </>
               ) : (
                 <>
-                  <div className="inline-block p-3 bg-slate-200 rounded-full text-slate-500 mb-4"><Skull size={32} /></div>
-                  <h3 className="text-3xl font-black text-slate-600 mb-1">You are Out</h3>
-                  <p className="text-slate-400">Whammed on {new Date(me?.whammed_at || '').toLocaleDateString()}</p>
-                  <p className="text-xs text-rose-400 mt-2 font-bold uppercase tracking-wide">This applies to all your teams</p>
+                  <div className="inline-block p-3 bg-red-200 rounded-full text-red-600 mb-4"><Skull size={32} /></div>
+                  <h3 className="text-3xl font-black text-red-700 mb-1">You are Out</h3>
+                  <p className="text-red-500">Whammed on {new Date(me?.whammed_at || '').toLocaleDateString()}</p>
+                  <p className="text-xs text-red-400 mt-2 font-bold uppercase tracking-wide">This applies to all your teams</p>
                 </>
               )}
             </div>
@@ -164,7 +163,7 @@ export default function GroupPage() {
 
         <div className="grid md:grid-cols-2 gap-8">
           <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-            <h3 className="text-emerald-500 font-bold uppercase tracking-wider text-xs mb-6 flex justify-between">
+            <h3 className="text-emerald-600 font-bold uppercase tracking-wider text-xs mb-6 flex justify-between">
               <span>Survivors</span> <span className="bg-emerald-100 px-2 py-0.5 rounded-full">{survivors.length}</span>
             </h3>
             <div className="space-y-4">
@@ -177,8 +176,8 @@ export default function GroupPage() {
             </div>
           </div>
           <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200">
-            <h3 className="text-rose-400 font-bold uppercase tracking-wider text-xs mb-6 flex justify-between">
-              <span>Whamhalla</span> <span className="bg-rose-100 px-2 py-0.5 rounded-full">{fallen.length}</span>
+            <h3 className="text-red-500 font-bold uppercase tracking-wider text-xs mb-6 flex justify-between">
+              <span>Whamhalla</span> <span className="bg-red-100 px-2 py-0.5 rounded-full">{fallen.length}</span>
             </h3>
             <div className="space-y-4 opacity-70 grayscale">
               {fallen.map(p => (
