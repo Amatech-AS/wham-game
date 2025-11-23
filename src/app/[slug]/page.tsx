@@ -41,6 +41,7 @@ export default function GroupPage() {
     setGlobalUserId(uid);
 
     const today = new Date();
+    // Sjekk om det er etter 24. desember
     if (today.getMonth() === 11 && today.getDate() > 24) setGameFinished(true);
   }, []);
 
@@ -110,7 +111,7 @@ export default function GroupPage() {
     setShowDeathModal(true);
   };
 
-  // 2. Bekreft død (kjøres når man trykker bekreft i modalen)
+  // 2. Bekreft død
   const confirmDeath = async () => {
     if (!deathReason) {
         alert("Du må nesten fortelle oss hvordan det skjedde...");
@@ -119,7 +120,6 @@ export default function GroupPage() {
     setIsDying(true);
     const uid = localStorage.getItem('wham_global_user_id');
     
-    // Oppdater i databasen
     await supabase.from('players')
       .update({ status: 'whammed', whammed_at: new Date(), death_reason: deathReason })
       .eq('user_id', uid);
@@ -180,11 +180,10 @@ export default function GroupPage() {
             </div>
         )}
 
-        {/* DEATH MODAL (Den nye kule popupen) */}
+        {/* DEATH MODAL */}
         {showDeathModal && (
             <div className="fixed inset-0 bg-red-900/90 flex items-center justify-center z-50 p-4 animate-in zoom-in-95 duration-300">
                 <div className="bg-slate-900 border-4 border-red-500 p-8 rounded-3xl max-w-md w-full text-center shadow-2xl relative overflow-hidden">
-                    {/* Bakgrunns-effekt */}
                     <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 pointer-events-none"></div>
                     
                     <div className="relative z-10">
@@ -211,7 +210,7 @@ export default function GroupPage() {
                                 onClick={() => setShowDeathModal(false)} 
                                 className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-4 rounded-xl font-bold transition-colors"
                             >
-                                Avbryt (Jeg er trygg)
+                                Avbryt
                             </button>
                             <button 
                                 onClick={confirmDeath} 
@@ -236,7 +235,8 @@ export default function GroupPage() {
                 <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-red-500 via-green-500 to-red-500"></div>
                 <Award size={64} className="mx-auto text-yellow-600 mb-4" />
                 <h2 className="text-4xl font-black text-yellow-800 mb-2">GRATULERER!</h2>
-                <p className="text-yellow-700 font-bold text-lg mb-6">Du overlevde Whamageddon 2024</p>
+                {/* DYNAMISK ÅRSTALL HER */}
+                <p className="text-yellow-700 font-bold text-lg mb-6">Du overlevde Whamageddon {new Date().getFullYear()}</p>
                 <div className="bg-white/80 p-6 rounded-xl inline-block border border-yellow-200 rotate-1 transform">
                     <p className="font-serif text-2xl text-slate-800 italic">"{me.name}"</p>
                     <p className="text-xs uppercase tracking-widest text-slate-400 mt-2">Sertifisert Wham-Fri</p>
@@ -315,6 +315,7 @@ export default function GroupPage() {
         </div>
 
         <div className="grid md:grid-cols-2 gap-8">
+          {/* SURVIVORS */}
           <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
             <h3 className="text-emerald-600 font-bold uppercase tracking-wider text-xs mb-6 flex justify-between">
               <span>Overlevende</span> <span className="bg-emerald-100 px-2 py-0.5 rounded-full">{survivors.length}</span>
@@ -332,11 +333,13 @@ export default function GroupPage() {
               ))}
             </div>
           </div>
+          
+          {/* FALLEN */}
           <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200">
             <h3 className="text-red-500 font-bold uppercase tracking-wider text-xs mb-6 flex justify-between">
               <span>Whamhalla (Ute)</span> <span className="bg-red-100 px-2 py-0.5 rounded-full">{fallen.length}</span>
             </h3>
-            <div className="space-y-4 opacity-70 grayscale">
+            <div className="space-y-4">
               {fallen.map(p => (
                 <div key={p.id} className="flex items-center gap-4 group relative">
                    {p.avatar_url ? <img src={p.avatar_url} className="w-10 h-10 rounded-full object-cover border-2 border-slate-300 grayscale" onError={(e) => {e.currentTarget.style.display='none'}} /> : <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 font-bold grayscale">💀</div>}
