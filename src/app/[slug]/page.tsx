@@ -199,4 +199,164 @@ export default function GroupPage() {
                             <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Hvordan skjedde det?</label>
                             <input 
                                 autoFocus
-                                className="w-full bg-slate-900 border border-slate-600 text-white p-3 rounded-lg focus:border-red-500 outline-none placeholder:text
+                                className="w-full bg-slate-900 border border-slate-600 text-white p-3 rounded-lg focus:border-red-500 outline-none placeholder:text-slate-600"
+                                placeholder="F.eks. Spotify-reklame..."
+                                value={deathReason}
+                                onChange={(e) => setDeathReason(e.target.value)}
+                            />
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button 
+                                onClick={() => setShowDeathModal(false)} 
+                                className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-4 rounded-xl font-bold transition-colors"
+                            >
+                                Avbryt (Jeg er trygg)
+                            </button>
+                            <button 
+                                onClick={confirmDeath} 
+                                disabled={isDying}
+                                className="flex-1 bg-red-600 hover:bg-red-700 text-white py-4 rounded-xl font-bold shadow-[0_0_20px_rgba(220,38,38,0.4)] transition-all transform hover:scale-105"
+                            >
+                                {isDying ? 'Lagrer...' : 'BEKREFT 💀'}
+                            </button>
+                        </div>
+                        
+                        <p className="text-xs text-slate-500 mt-6">
+                            Advarsel: Dette vil markere deg som ute i <span className="text-red-400 font-bold">ALLE</span> dine grupper.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* DIPLOM MODAL */}
+        {gameFinished && me?.status === 'alive' && (
+            <div className="mb-12 bg-gradient-to-r from-yellow-100 to-amber-100 border-2 border-yellow-300 p-8 rounded-3xl shadow-xl text-center relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-red-500 via-green-500 to-red-500"></div>
+                <Award size={64} className="mx-auto text-yellow-600 mb-4" />
+                <h2 className="text-4xl font-black text-yellow-800 mb-2">GRATULERER!</h2>
+                <p className="text-yellow-700 font-bold text-lg mb-6">Du overlevde Whamageddon 2024</p>
+                <div className="bg-white/80 p-6 rounded-xl inline-block border border-yellow-200 rotate-1 transform">
+                    <p className="font-serif text-2xl text-slate-800 italic">"{me.name}"</p>
+                    <p className="text-xs uppercase tracking-widest text-slate-400 mt-2">Sertifisert Wham-Fri</p>
+                </div>
+                <button onClick={() => window.print()} className="block mx-auto mt-8 bg-yellow-600 hover:bg-yellow-700 text-white px-8 py-3 rounded-xl font-bold">Print Diplom</button>
+            </div>
+        )}
+
+        {/* MAIN UI */}
+        <div className="mb-12">
+          {!myPlayerId || isEditing ? (
+            <div className="bg-white border border-emerald-100 p-8 rounded-3xl shadow-xl shadow-emerald-100/50">
+              <h3 className="text-2xl font-bold text-emerald-800 mb-6 flex items-center gap-2">
+                {isEditing ? <Settings className="text-slate-400"/> : <User className="text-emerald-500"/>} 
+                {isEditing ? 'Rediger Profil' : 'Bli med i denne gruppen'}
+              </h3>
+              <form onSubmit={handleJoinOrUpdate} className="space-y-4">
+                
+                {groupPassword && !myPlayerId && (
+                    <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 mb-4">
+                        <label className="block text-xs font-bold text-amber-600 uppercase mb-1 flex items-center gap-1"><Lock size={10}/> Gruppe-Passord</label>
+                        <input className="w-full bg-white border-2 border-amber-100 rounded-xl p-3 font-semibold outline-none focus:border-amber-400" type="text" value={formData.passwordAttempt} onChange={e => setFormData({...formData, passwordAttempt: e.target.value})} placeholder="Skriv passord..." />
+                    </div>
+                )}
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Ditt Navn</label>
+                    <input className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 font-semibold outline-none focus:border-emerald-400" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="f.eks. Ola Nordmann" required />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Hemmelig PIN (4 Tall)</label>
+                    <input className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 font-semibold outline-none focus:border-emerald-400" value={formData.pin} onChange={e => setFormData({...formData, pin: e.target.value})} placeholder="1234" maxLength={4} required />
+                    <p className="text-[10px] text-slate-400 mt-1">Husk denne for å bruke mobilen senere!</p>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Firma / Avdeling</label>
+                  <input className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 font-semibold outline-none focus:border-emerald-400" value={formData.company} onChange={e => setFormData({...formData, company: e.target.value})} placeholder="f.eks. Salg" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1 flex items-center gap-2">
+                    Profilbilde URL (Valgfritt) <ImageIcon size={12} />
+                  </label>
+                  <input className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 text-sm outline-none focus:border-emerald-400" value={formData.avatar_url} onChange={e => setFormData({...formData, avatar_url: e.target.value})} placeholder="https://..." />
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold shadow-lg shadow-emerald-200 transition-all">
+                    {isEditing ? 'Lagre Endringer' : 'Bli Med'}
+                  </button>
+                  {isEditing && <button type="button" onClick={() => setIsEditing(false)} className="px-6 py-3 bg-slate-100 rounded-xl font-bold text-slate-500">Avbryt</button>}
+                </div>
+              </form>
+            </div>
+          ) : (
+            <div className={`relative overflow-hidden rounded-3xl p-8 text-center border-2 ${me?.status === 'alive' ? 'bg-emerald-50 border-emerald-100' : 'bg-red-50 border-red-200'}`}>
+              <button onClick={() => setIsEditing(true)} className="absolute top-4 right-4 p-2 bg-white/50 hover:bg-white rounded-full transition-all"><Settings size={18} className="text-slate-500" /></button>
+              {me?.status === 'alive' ? (
+                <>
+                  <div className="inline-block p-3 bg-emerald-100 rounded-full text-emerald-600 mb-4"><Trophy size={32} /></div>
+                  <h3 className="text-3xl font-black text-emerald-800 mb-1">Du er Trygg (enn så lenge)</h3>
+                  <p className="text-emerald-600 mb-6 font-medium">Hold deg unna radioen!</p>
+                  {/* ENDRET: Åpner modalen i stedet for direkte action */}
+                  <button onClick={openDeathModal} className="bg-white text-red-600 hover:bg-red-50 border-2 border-red-200 px-8 py-3 rounded-xl font-bold transition-all shadow-sm hover:shadow-md">JEG HØRTE DEN! 😭</button>
+                </>
+              ) : (
+                <>
+                  <div className="inline-block p-3 bg-red-200 rounded-full text-red-600 mb-4"><Skull size={32} /></div>
+                  <h3 className="text-3xl font-black text-red-700 mb-1">Du er Ute!</h3>
+                  <p className="text-red-500">Du røk ut den {new Date(me?.whammed_at || '').toLocaleDateString()}</p>
+                  <p className="text-xs text-red-400 mt-2 font-bold uppercase tracking-wide">Dette gjelder alle dine grupper</p>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-8">
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+            <h3 className="text-emerald-600 font-bold uppercase tracking-wider text-xs mb-6 flex justify-between">
+              <span>Overlevende</span> <span className="bg-emerald-100 px-2 py-0.5 rounded-full">{survivors.length}</span>
+            </h3>
+            <div className="space-y-4">
+              {survivors.map(p => (
+                <div key={p.id} className="flex items-center gap-4 group relative">
+                  {p.avatar_url ? <img src={p.avatar_url} className="w-10 h-10 rounded-full object-cover border-2 border-emerald-200" onError={(e) => {e.currentTarget.style.display='none'}} /> : <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold">{p.name.charAt(0)}</div>}
+                  <div className="flex-1"><div className="font-bold text-slate-700">{p.name}</div>{p.company && <div className="text-xs text-slate-400 flex items-center gap-1"><Building size={10}/> {p.company}</div>}</div>
+                  
+                  {isAdmin && (
+                      <button onClick={() => adminDelete(p.id)} className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-500 p-2"><Trash2 size={16}/></button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200">
+            <h3 className="text-red-500 font-bold uppercase tracking-wider text-xs mb-6 flex justify-between">
+              <span>Whamhalla (Ute)</span> <span className="bg-red-100 px-2 py-0.5 rounded-full">{fallen.length}</span>
+            </h3>
+            <div className="space-y-4 opacity-70 grayscale">
+              {fallen.map(p => (
+                <div key={p.id} className="flex items-center gap-4 group relative">
+                   {p.avatar_url ? <img src={p.avatar_url} className="w-10 h-10 rounded-full object-cover border-2 border-slate-300 grayscale" onError={(e) => {e.currentTarget.style.display='none'}} /> : <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 font-bold grayscale">💀</div>}
+                  <div className="flex-1">
+                      <div className="font-bold text-slate-600 line-through decoration-red-400 decoration-2">{p.name}</div>
+                      {p.death_reason ? <div className="text-xs text-red-500 italic">"{p.death_reason}"</div> : <div className="text-xs text-slate-400">{new Date(p.whammed_at).toLocaleDateString()}</div>}
+                  </div>
+                  
+                  {isAdmin && (
+                      <div className="opacity-0 group-hover:opacity-100 flex gap-2">
+                          <button onClick={() => adminRevive(p.id)} className="text-emerald-500 hover:bg-emerald-100 p-1 rounded" title="Gjenoppliv"><HeartPulse size={16}/></button>
+                          <button onClick={() => adminDelete(p.id)} className="text-slate-300 hover:text-red-500 p-1 rounded" title="Slett"><Trash2 size={16}/></button>
+                      </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
