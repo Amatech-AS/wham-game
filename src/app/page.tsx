@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
-import { Users, ArrowRight, Building2, Timer, Globe, Smartphone, AlertTriangle, Trophy, Skull } from 'lucide-react';
+import { Users, ArrowRight, Building2, Timer, Globe, Smartphone, AlertTriangle, Trophy, Skull, UserCircle } from 'lucide-react';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://example.supabase.co';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'example-key';
@@ -16,12 +16,8 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [activeGroups, setActiveGroups] = useState<Group[]>([]);
   const [stats, setStats] = useState({ total: 0, alive: 0 });
-  
-  // Dato State
   const [daysCount, setDaysCount] = useState(0);
   const [dateLabel, setDateLabel] = useState('');
-
-  // User State
   const [myProfile, setMyProfile] = useState<Player | null>(null);
 
   const router = useRouter();
@@ -33,29 +29,22 @@ export default function Home() {
   const [syncMsg, setSyncMsg] = useState('');
 
   useEffect(() => {
-    // 1. User ID
     let userId = localStorage.getItem('wham_global_user_id');
     if (!userId) {
       userId = crypto.randomUUID();
       localStorage.setItem('wham_global_user_id', userId);
     }
 
-    // 2. Dato Logikk (Før eller under spillet?)
     const today = new Date();
     const currentYear = today.getFullYear();
-    const startDate = new Date(currentYear, 11, 1); // 1. Desember (Måned 11)
-    const endDate = new Date(currentYear, 11, 24);  // 24. Desember
-    
-    // Hvis vi er i januar-november, sett årstallet for julen til i år.
-    // Hvis vi er i romjulen (etter 24. des), kan man evt sette neste år, men for nå holder vi oss til i år.
+    const startDate = new Date(currentYear, 11, 1); 
+    const endDate = new Date(currentYear, 11, 24);  
 
     if (today < startDate) {
-      // Før 1. desember
       const diff = startDate.getTime() - today.getTime();
       setDaysCount(Math.ceil(diff / (1000 * 3600 * 24)));
       setDateLabel('Dager til start');
     } else {
-      // I desember (eller etter)
       const diff = endDate.getTime() - today.getTime();
       const days = Math.ceil(diff / (1000 * 3600 * 24));
       if (days < 0) {
@@ -68,18 +57,15 @@ export default function Home() {
     }
 
     const fetchData = async () => {
-      // Hent grupper A-Z
       const { data: groups } = await supabase
         .from('groups')
         .select('*')
         .order('name', { ascending: true });
       if (groups) setActiveGroups(groups);
       
-      // Hent statistikk
       const { data: statData } = await supabase.rpc('get_global_stats');
       if (statData) setStats(statData);
 
-      // Hent min profil (hvis jeg har en)
       if (userId) {
         const { data: myData } = await supabase
           .from('players')
@@ -131,29 +117,38 @@ export default function Home() {
     <main className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-20">
       <div className="max-w-5xl mx-auto p-6">
         
-        {/* Hero Section */}
-        <div className="text-center py-12 md:py-16 relative">
-          
-          <h1 className="text-5xl sm:text-6xl md:text-8xl font-black italic tracking-tighter -rotate-2 transform text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400 drop-shadow-[4px_4px_0px_rgba(0,0,0,0.15)] mb-6 break-words p-2">
-            WHAMAGEDDON
-          </h1>
-          
-          {/* Sync Button Container - Nå med 'relative' for å fikse tooltip posisjon */}
-          <div className="absolute top-0 right-0 md:top-4 md:right-4 group relative inline-block">
-            <button onClick={() => setShowSync(!showSync)} className="flex items-center gap-2 text-xs font-bold text-slate-600 bg-white px-4 py-2 rounded-full hover:bg-slate-100 transition-all border border-slate-200 shadow-sm relative z-20">
-              <Smartphone size={14} className="text-purple-500" /> {showSync ? 'Lukk' : 'Synkroniser'}
-            </button>
-            
-            {/* Tooltip boks - Posisjonert relativt til knappen */}
-            {!showSync && (
-              <div className="absolute right-0 top-full mt-2 w-48 bg-slate-800 text-white text-[10px] p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10 shadow-xl">
-                Har du byttet mobil eller PC? Bruk denne for å hente tilbake profilen din.
-              </div>
-            )}
-          </div>
+        {/* Header Area */}
+        <div className="relative mb-8 md:mb-12">
+           {/* Knapper øverst til høyre */}
+           <div className="flex justify-end gap-2 mb-4 md:absolute md:top-0 md:right-0 z-20">
+             
+             {/* MIN PROFIL KNAPP (Ny) */}
+             <button onClick={() => router.push('/profile')} className="flex items-center gap-2 text-xs font-bold text-slate-600 bg-white px-4 py-2 rounded-full hover:bg-slate-100 transition-all border border-slate-200 shadow-sm">
+                <UserCircle size={14} className="text-emerald-600" /> Min Profil
+             </button>
 
-          {/* SYNC MODAL */}
-          {showSync && (
+             {/* SYNC KNAPP */}
+             <div className="group relative inline-block">
+                <button onClick={() => setShowSync(!showSync)} className="flex items-center gap-2 text-xs font-bold text-slate-600 bg-white px-4 py-2 rounded-full hover:bg-slate-100 transition-all border border-slate-200 shadow-sm">
+                  <Smartphone size={14} className="text-purple-500" /> {showSync ? 'Lukk' : 'Synk'}
+                </button>
+                {!showSync && (
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-slate-800 text-white text-[10px] p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10 shadow-xl">
+                    Har du byttet mobil? Hent profilen din her.
+                  </div>
+                )}
+             </div>
+           </div>
+
+           {/* LOGO */}
+           <div className="text-center pt-8 md:pt-16">
+            <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-b from-amber-500 via-yellow-400 to-amber-600 mb-4 tracking-tighter break-words drop-shadow-[0_2px_2px_rgba(180,83,9,0.4)]">
+                WHAMAGEDDON
+            </h1>
+           </div>
+
+           {/* SYNC MODAL */}
+           {showSync && (
             <div className="max-w-md mx-auto mb-8 bg-white p-6 rounded-2xl shadow-lg border border-purple-100 animate-in fade-in slide-in-from-top-4 relative z-30">
               <h3 className="text-lg font-bold mb-2 text-slate-800">Synkroniser denne enheten</h3>
               <p className="text-sm text-slate-500 mb-4">Skriv inn Navn og PIN-kode fra din gamle enhet.</p>
@@ -166,19 +161,19 @@ export default function Home() {
                 {syncMsg && <p className={`text-sm font-bold ${syncMsg.includes('Suksess') ? 'text-green-600' : 'text-red-500'}`}>{syncMsg}</p>}
               </form>
             </div>
-          )}
+           )}
         </div>
 
-        {/* MIN PROFIL (Vises kun hvis man er logget inn) */}
+        {/* MIN STATUS CARD (Klikkbar til profil) */}
         {myProfile && (
-           <div className={`max-w-3xl mx-auto mb-12 p-6 rounded-2xl border-2 flex items-center justify-between shadow-sm ${myProfile.status === 'alive' ? 'bg-emerald-50 border-emerald-100' : 'bg-red-50 border-red-100'}`}>
+           <div onClick={() => router.push('/profile')} className={`cursor-pointer max-w-3xl mx-auto mb-12 p-6 rounded-2xl border-2 flex items-center justify-between shadow-sm transition-transform hover:scale-[1.02] ${myProfile.status === 'alive' ? 'bg-emerald-50 border-emerald-100' : 'bg-red-50 border-red-100'}`}>
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider mb-1 opacity-60">Din Status</p>
                 <h3 className={`text-2xl font-black ${myProfile.status === 'alive' ? 'text-emerald-700' : 'text-red-700'}`}>
                   {myProfile.status === 'alive' ? 'Du lever! 🎄' : 'Du er ute 💀'}
                 </h3>
                 <p className="text-sm opacity-80 mt-1">
-                   {myProfile.status === 'alive' ? 'Hold deg unna Wham!' : `Du røk ut ${new Date(myProfile.whammed_at).toLocaleDateString()}`}
+                   {myProfile.status === 'alive' ? 'Klikk for å redigere profil' : `Du røk ut ${new Date(myProfile.whammed_at).toLocaleDateString()}`}
                 </p>
               </div>
               <div className="text-4xl">
@@ -187,7 +182,7 @@ export default function Home() {
            </div>
         )}
 
-        {/* RULES CARD - OPPDATERT */}
+        {/* RULES CARD */}
         <div className="max-w-3xl mx-auto mb-12 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row gap-6 items-start">
             <div className="bg-red-50 p-3 rounded-full text-red-500 shrink-0">
                 <AlertTriangle size={24} />
@@ -199,7 +194,7 @@ export default function Home() {
                     Dersom du hører sangen – enten det er på radioen, i en heis, på et kjøpesenter eller en venn spiller den – da er du <strong>ute</strong>!
                 </p>
                 <p className="text-slate-600 text-sm leading-relaxed font-bold">
-                    Du kan være med i så mange grupper du vil. Men husk: Ryker du ut i én gruppe, ryker du ut i ALLE. Lykke til neste år!
+                    Du kan være med i så mange grupper du vil. Men husk: Ryker du ut i én gruppe, ryker du ut i ALLE.
                 </p>
             </div>
         </div>
@@ -233,7 +228,7 @@ export default function Home() {
           {/* ACTIVE GROUPS LIST */}
           <div className="w-full">
             <h2 className="text-2xl font-bold mb-6 flex items-center gap-2 text-slate-700">
-              <Users className="text-pink-500" /> Aktive Grupper
+              <Users className="text-red-500" /> Aktive Grupper
             </h2>
             
             <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
@@ -241,13 +236,13 @@ export default function Home() {
                 <div 
                   key={group.id} 
                   onClick={() => router.push(`/${group.slug}`)} 
-                  className="group bg-white p-5 rounded-2xl border border-slate-200 hover:border-pink-300 hover:shadow-md cursor-pointer transition-all flex justify-between items-center"
+                  className="group bg-white p-5 rounded-2xl border border-slate-200 hover:border-red-300 hover:shadow-md cursor-pointer transition-all flex justify-between items-center"
                 >
                   <div>
-                    <h3 className="font-bold text-lg text-slate-800 group-hover:text-pink-600 transition-colors">{group.name}</h3>
+                    <h3 className="font-bold text-lg text-slate-800 group-hover:text-red-600 transition-colors">{group.name}</h3>
                     <p className="text-xs text-slate-400">Opprettet {new Date(group.created_at).toLocaleDateString()}</p>
                   </div>
-                  <ArrowRight className="text-slate-300 group-hover:text-pink-500 transition-transform group-hover:translate-x-1" />
+                  <ArrowRight className="text-slate-300 group-hover:text-red-500 transition-transform group-hover:translate-x-1" />
                 </div>
               ))}
               {activeGroups.length === 0 && <p className="text-slate-400 italic">Ingen aktive grupper enda.</p>}
@@ -256,11 +251,11 @@ export default function Home() {
 
         </div>
 
-        {/* STATS BAR - OPPDATERT */}
+        {/* STATS BAR */}
         <div className="mt-16 border-t border-slate-200 pt-12">
           <div className="flex flex-wrap justify-center gap-4 md:gap-8">
             <div className="bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-3">
-              <Timer className="text-pink-500" />
+              <Timer className="text-red-500" />
               <div className="text-left">
                 <div className="text-xs font-bold text-slate-400 uppercase">{dateLabel}</div>
                 <div className="text-xl font-black text-slate-700">{daysCount}</div>
