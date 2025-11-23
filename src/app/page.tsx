@@ -2,20 +2,28 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
-import { Users, ArrowRight, Building2, Timer, Globe, Smartphone, Info, AlertTriangle } from 'lucide-react';
+import { Users, ArrowRight, Building2, Timer, Globe, Smartphone, AlertTriangle, Trophy, Skull } from 'lucide-react';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://example.supabase.co';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'example-key';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 type Group = { id: string; name: string; slug: string; created_at: string };
+type Player = { id: string; name: string; status: 'alive' | 'whammed'; whammed_at: string };
 
 export default function Home() {
   const [groupName, setGroupName] = useState('');
   const [loading, setLoading] = useState(false);
   const [activeGroups, setActiveGroups] = useState<Group[]>([]);
   const [stats, setStats] = useState({ total: 0, alive: 0 });
-  const [daysLeft, setDaysLeft] = useState(0);
+  
+  // Dato State
+  const [daysCount, setDaysCount] = useState(0);
+  const [dateLabel, setDateLabel] = useState('');
+
+  // User State
+  const [myProfile, setMyProfile] = useState<Player | null>(null);
+
   const router = useRouter();
 
   // Sync State
@@ -25,28 +33,62 @@ export default function Home() {
   const [syncMsg, setSyncMsg] = useState('');
 
   useEffect(() => {
+    // 1. User ID
     let userId = localStorage.getItem('wham_global_user_id');
     if (!userId) {
       userId = crypto.randomUUID();
       localStorage.setItem('wham_global_user_id', userId);
     }
 
+    // 2. Dato Logikk (Før eller under spillet?)
     const today = new Date();
-    const end = new Date(today.getFullYear(), 11, 24);
-    if (today.getMonth() === 11 && today.getDate() > 24) end.setFullYear(end.getFullYear() + 1);
-    const diff = end.getTime() - today.getTime();
-    setDaysLeft(Math.ceil(diff / (1000 * 3600 * 24)));
+    const currentYear = today.getFullYear();
+    const startDate = new Date(currentYear, 11, 1); // 1. Desember (Måned 11)
+    const endDate = new Date(currentYear, 11, 24);  // 24. Desember
+    
+    // Hvis vi er i januar-november, sett årstallet for julen til i år.
+    // Hvis vi er i romjulen (etter 24. des), kan man evt sette neste år, men for nå holder vi oss til i år.
+
+    if (today < startDate) {
+      // Før 1. desember
+      const diff = startDate.getTime() - today.getTime();
+      setDaysCount(Math.ceil(diff / (1000 * 3600 * 24)));
+      setDateLabel('Dager til start');
+    } else {
+      // I desember (eller etter)
+      const diff = endDate.getTime() - today.getTime();
+      const days = Math.ceil(diff / (1000 * 3600 * 24));
+      if (days < 0) {
+        setDaysCount(0);
+        setDateLabel('Spillet er slutt');
+      } else {
+        setDaysCount(days);
+        setDateLabel('Dager igjen');
+      }
+    }
 
     const fetchData = async () => {
+      // Hent grupper A-Z
       const { data: groups } = await supabase
         .from('groups')
         .select('*')
         .order('name', { ascending: true });
-      
       if (groups) setActiveGroups(groups);
       
+      // Hent statistikk
       const { data: statData } = await supabase.rpc('get_global_stats');
       if (statData) setStats(statData);
+
+      // Hent min profil (hvis jeg har en)
+      if (userId) {
+        const { data: myData } = await supabase
+          .from('players')
+          .select('*')
+          .eq('user_id', userId)
+          .limit(1)
+          .single();
+        if (myData) setMyProfile(myData);
+      }
     };
     fetchData();
   }, []);
@@ -92,25 +134,19 @@ export default function Home() {
         {/* Hero Section */}
         <div className="text-center py-12 md:py-16 relative">
           
-          {/* 
-             80s STYLE LOGO 
-             - Skråstilt (italic / -rotate-2)
-             - Neon farger (Pink / Cyan)
-             - Drop Shadow for dybde
-          */}
           <h1 className="text-5xl sm:text-6xl md:text-8xl font-black italic tracking-tighter -rotate-2 transform text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400 drop-shadow-[4px_4px_0px_rgba(0,0,0,0.15)] mb-6 break-words p-2">
             WHAMAGEDDON
           </h1>
           
-          {/* Sync Button med Tooltip */}
-          <div className="absolute top-0 right-0 md:top-4 md:right-4 group relative">
-            <button onClick={() => setShowSync(!showSync)} className="flex items-center gap-2 text-xs font-bold text-slate-600 bg-white px-4 py-2 rounded-full hover:bg-slate-100 transition-all border border-slate-200 shadow-sm z-20 relative">
+          {/* Sync Button Container - Nå med 'relative' for å fikse tooltip posisjon */}
+          <div className="absolute top-0 right-0 md:top-4 md:right-4 group relative inline-block">
+            <button onClick={() => setShowSync(!showSync)} className="flex items-center gap-2 text-xs font-bold text-slate-600 bg-white px-4 py-2 rounded-full hover:bg-slate-100 transition-all border border-slate-200 shadow-sm relative z-20">
               <Smartphone size={14} className="text-purple-500" /> {showSync ? 'Lukk' : 'Synkroniser'}
             </button>
             
-            {/* Tooltip boks */}
+            {/* Tooltip boks - Posisjonert relativt til knappen */}
             {!showSync && (
-              <div className="absolute right-0 top-10 w-48 bg-slate-800 text-white text-[10px] p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10 shadow-xl">
+              <div className="absolute right-0 top-full mt-2 w-48 bg-slate-800 text-white text-[10px] p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10 shadow-xl">
                 Har du byttet mobil eller PC? Bruk denne for å hente tilbake profilen din.
               </div>
             )}
@@ -133,17 +169,37 @@ export default function Home() {
           )}
         </div>
 
-        {/* RULES CARD */}
+        {/* MIN PROFIL (Vises kun hvis man er logget inn) */}
+        {myProfile && (
+           <div className={`max-w-3xl mx-auto mb-12 p-6 rounded-2xl border-2 flex items-center justify-between shadow-sm ${myProfile.status === 'alive' ? 'bg-emerald-50 border-emerald-100' : 'bg-red-50 border-red-100'}`}>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider mb-1 opacity-60">Din Status</p>
+                <h3 className={`text-2xl font-black ${myProfile.status === 'alive' ? 'text-emerald-700' : 'text-red-700'}`}>
+                  {myProfile.status === 'alive' ? 'Du lever! 🎄' : 'Du er ute 💀'}
+                </h3>
+                <p className="text-sm opacity-80 mt-1">
+                   {myProfile.status === 'alive' ? 'Hold deg unna Wham!' : `Du røk ut ${new Date(myProfile.whammed_at).toLocaleDateString()}`}
+                </p>
+              </div>
+              <div className="text-4xl">
+                 {myProfile.status === 'alive' ? <Trophy className="text-emerald-500" /> : <Skull className="text-red-500" />}
+              </div>
+           </div>
+        )}
+
+        {/* RULES CARD - OPPDATERT */}
         <div className="max-w-3xl mx-auto mb-12 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row gap-6 items-start">
             <div className="bg-red-50 p-3 rounded-full text-red-500 shrink-0">
                 <AlertTriangle size={24} />
             </div>
             <div>
                 <h3 className="text-lg font-bold text-slate-800 mb-2">Slik er reglene:</h3>
-                <p className="text-slate-600 text-sm leading-relaxed">
+                <p className="text-slate-600 text-sm leading-relaxed mb-2">
                     Målet er å overleve helt frem til julaften <strong>uten</strong> å høre originalversjonen av <em>"Wham! - Last Christmas"</em>. 
                     Dersom du hører sangen – enten det er på radioen, i en heis, på et kjøpesenter eller en venn spiller den – da er du <strong>ute</strong>!
-                    (Cover-versjoner teller ikke).
+                </p>
+                <p className="text-slate-600 text-sm leading-relaxed font-bold">
+                    Du kan være med i så mange grupper du vil. Men husk: Ryker du ut i én gruppe, ryker du ut i ALLE. Lykke til neste år!
                 </p>
             </div>
         </div>
@@ -151,10 +207,10 @@ export default function Home() {
         {/* MAIN CONTENT */}
         <div className="flex flex-col-reverse md:grid md:grid-cols-2 gap-12 items-start">
           
-          {/* CREATE CARD (Grønn/Positiv) */}
+          {/* CREATE CARD */}
           <div className="bg-white p-8 rounded-3xl shadow-xl shadow-emerald-100 border border-emerald-50 w-full">
             <h2 className="text-2xl font-bold mb-6 flex items-center gap-2 text-emerald-800">
-              <Building2 className="text-emerald-500" /> Opprett Ny Gruppe
+              <Building2 className="text-emerald-500" /> Ny Gruppe
             </h2>
             <form onSubmit={createGroup}>
               <div className="mb-6">
@@ -200,20 +256,20 @@ export default function Home() {
 
         </div>
 
-        {/* STATS BAR */}
+        {/* STATS BAR - OPPDATERT */}
         <div className="mt-16 border-t border-slate-200 pt-12">
           <div className="flex flex-wrap justify-center gap-4 md:gap-8">
             <div className="bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-3">
               <Timer className="text-pink-500" />
               <div className="text-left">
-                <div className="text-xs font-bold text-slate-400 uppercase">Tid Igjen</div>
-                <div className="text-xl font-black text-slate-700">{daysLeft} Dager</div>
+                <div className="text-xs font-bold text-slate-400 uppercase">{dateLabel}</div>
+                <div className="text-xl font-black text-slate-700">{daysCount}</div>
               </div>
             </div>
             <div className="bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-3">
               <Globe className="text-emerald-500" />
               <div className="text-left">
-                <div className="text-xs font-bold text-slate-400 uppercase">Globale Overlevende</div>
+                <div className="text-xs font-bold text-slate-400 uppercase">Aktive Spillere</div>
                 <div className="text-xl font-black text-slate-700">
                   <span className="text-emerald-600">{stats.alive}</span> <span className="text-slate-300">/</span> {stats.total}
                 </div>
