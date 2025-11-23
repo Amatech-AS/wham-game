@@ -58,7 +58,7 @@ export default function GroupPage() {
 
   const handleJoinOrUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.pin) { alert("Name and PIN are required!"); return; }
+    if (!formData.name || !formData.pin) { alert("Navn og PIN er påkrevd!"); return; }
     const uid = localStorage.getItem('wham_global_user_id');
 
     if (myPlayerId) {
@@ -74,14 +74,14 @@ export default function GroupPage() {
       
       if (data) {
         setMyPlayerId(data.id);
-        if (initialStatus === 'alive') confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#ef4444', '#10b981'] });
+        if (initialStatus === 'alive') confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#ec4899', '#10b981', '#06b6d4'] }); // 80s Colors Confetti
       }
     }
     fetchGroupData();
   };
 
   const iGotWhammed = async () => {
-    if (!confirm("Are you sure? This will mark you as OUT in ALL your teams.")) return;
+    if (!confirm("Er du sikker? Dette vil markere deg som UTE i alle gruppene dine.")) return;
     const uid = localStorage.getItem('wham_global_user_id');
     await supabase.from('players').update({ status: 'whammed', whammed_at: new Date() }).eq('user_id', uid);
   };
@@ -96,13 +96,12 @@ export default function GroupPage() {
         <div className="flex justify-between items-end mb-8">
           <div>
              <button onClick={() => router.push('/')} className="flex items-center gap-2 text-slate-500 hover:text-emerald-600 transition-colors font-bold text-xs uppercase tracking-wider mb-4">
-              <ArrowLeft size={14} /> Back to Home
+              <ArrowLeft size={14} /> Tilbake
             </button>
-            {/* SMALL GOLD LABEL */}
-            <h2 className="text-xs font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-yellow-400 uppercase tracking-widest mb-1">Whamageddon</h2>
-            <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight">{groupName || 'Loading...'}</h1>
+            <h2 className="text-xs font-black italic text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-cyan-500 uppercase tracking-widest mb-1 -skew-x-6">Whamageddon</h2>
+            <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight">{groupName || 'Laster...'}</h1>
           </div>
-          <button onClick={() => {navigator.clipboard.writeText(window.location.href); alert('Copied!');}} className="bg-white px-4 py-2 rounded-full text-sm font-bold shadow-sm hover:shadow-md transition-all text-emerald-600">Share Link 🔗</button>
+          <button onClick={() => {navigator.clipboard.writeText(window.location.href); alert('Link kopiert!');}} className="bg-white px-4 py-2 rounded-full text-sm font-bold shadow-sm hover:shadow-md transition-all text-emerald-600">Del Link 🔗</button>
         </div>
 
         <div className="mb-12">
@@ -110,33 +109,33 @@ export default function GroupPage() {
             <div className="bg-white border border-emerald-100 p-8 rounded-3xl shadow-xl shadow-emerald-100/50">
               <h3 className="text-2xl font-bold text-emerald-800 mb-6 flex items-center gap-2">
                 {isEditing ? <Settings className="text-slate-400"/> : <User className="text-emerald-500"/>} 
-                {isEditing ? 'Edit Profile' : 'Join this Team'}
+                {isEditing ? 'Rediger Profil' : 'Bli med i denne gruppen'}
               </h3>
               <form onSubmit={handleJoinOrUpdate} className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Your Name</label>
-                    <input className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 font-semibold outline-none focus:border-emerald-400" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="e.g. John Doe" required />
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Ditt Navn</label>
+                    <input className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 font-semibold outline-none focus:border-emerald-400" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="f.eks. Ola Nordmann" required />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Secret PIN (4 Digits)</label>
-                    <input className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 font-semibold outline-none focus:border-emerald-400" value={formData.pin} onChange={e => setFormData({...formData, pin: e.target.value})} placeholder="e.g. 1234" maxLength={4} required />
-                    <p className="text-[10px] text-slate-400 mt-1">Remember this to sync other devices!</p>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Hemmelig PIN (4 Tall)</label>
+                    <input className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 font-semibold outline-none focus:border-emerald-400" value={formData.pin} onChange={e => setFormData({...formData, pin: e.target.value})} placeholder="1234" maxLength={4} required />
+                    <p className="text-[10px] text-slate-400 mt-1">Husk denne for å bruke mobilen senere!</p>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Company / Dept</label>
-                  <input className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 font-semibold outline-none focus:border-emerald-400" value={formData.company} onChange={e => setFormData({...formData, company: e.target.value})} placeholder="e.g. Sales" />
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Firma / Avdeling</label>
+                  <input className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 font-semibold outline-none focus:border-emerald-400" value={formData.company} onChange={e => setFormData({...formData, company: e.target.value})} placeholder="f.eks. Salg" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Profile Picture URL</label>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Profilbilde URL (Valgfritt)</label>
                   <input className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 text-sm outline-none focus:border-emerald-400" value={formData.avatar_url} onChange={e => setFormData({...formData, avatar_url: e.target.value})} placeholder="https://..." />
                 </div>
                 <div className="flex gap-3 pt-2">
                   <button className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold shadow-lg shadow-emerald-200 transition-all">
-                    {isEditing ? 'Save Changes' : 'Join Game'}
+                    {isEditing ? 'Lagre Endringer' : 'Bli Med'}
                   </button>
-                  {isEditing && <button type="button" onClick={() => setIsEditing(false)} className="px-6 py-3 bg-slate-100 rounded-xl font-bold text-slate-500">Cancel</button>}
+                  {isEditing && <button type="button" onClick={() => setIsEditing(false)} className="px-6 py-3 bg-slate-100 rounded-xl font-bold text-slate-500">Avbryt</button>}
                 </div>
               </form>
             </div>
@@ -146,16 +145,16 @@ export default function GroupPage() {
               {me?.status === 'alive' ? (
                 <>
                   <div className="inline-block p-3 bg-emerald-100 rounded-full text-emerald-600 mb-4"><Trophy size={32} /></div>
-                  <h3 className="text-3xl font-black text-emerald-800 mb-1">You are Safe</h3>
-                  <p className="text-emerald-600 mb-6 font-medium">Don't let your guard down.</p>
-                  <button onClick={iGotWhammed} className="bg-white text-red-600 hover:bg-red-50 border-2 border-red-200 px-8 py-3 rounded-xl font-bold transition-all shadow-sm hover:shadow-md">I Heard It! (Report Defeat)</button>
+                  <h3 className="text-3xl font-black text-emerald-800 mb-1">Du er Trygg (enn så lenge)</h3>
+                  <p className="text-emerald-600 mb-6 font-medium">Hold deg unna radioen!</p>
+                  <button onClick={iGotWhammed} className="bg-white text-red-600 hover:bg-red-50 border-2 border-red-200 px-8 py-3 rounded-xl font-bold transition-all shadow-sm hover:shadow-md">JEG HØRTE DEN! 😭</button>
                 </>
               ) : (
                 <>
                   <div className="inline-block p-3 bg-red-200 rounded-full text-red-600 mb-4"><Skull size={32} /></div>
-                  <h3 className="text-3xl font-black text-red-700 mb-1">You are Out</h3>
-                  <p className="text-red-500">Whammed on {new Date(me?.whammed_at || '').toLocaleDateString()}</p>
-                  <p className="text-xs text-red-400 mt-2 font-bold uppercase tracking-wide">This applies to all your teams</p>
+                  <h3 className="text-3xl font-black text-red-700 mb-1">Du er Ute!</h3>
+                  <p className="text-red-500">Du røk ut den {new Date(me?.whammed_at || '').toLocaleDateString()}</p>
+                  <p className="text-xs text-red-400 mt-2 font-bold uppercase tracking-wide">Dette gjelder alle dine grupper</p>
                 </>
               )}
             </div>
@@ -165,7 +164,7 @@ export default function GroupPage() {
         <div className="grid md:grid-cols-2 gap-8">
           <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
             <h3 className="text-emerald-600 font-bold uppercase tracking-wider text-xs mb-6 flex justify-between">
-              <span>Survivors</span> <span className="bg-emerald-100 px-2 py-0.5 rounded-full">{survivors.length}</span>
+              <span>Overlevende</span> <span className="bg-emerald-100 px-2 py-0.5 rounded-full">{survivors.length}</span>
             </h3>
             <div className="space-y-4">
               {survivors.map(p => (
@@ -178,7 +177,7 @@ export default function GroupPage() {
           </div>
           <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200">
             <h3 className="text-red-500 font-bold uppercase tracking-wider text-xs mb-6 flex justify-between">
-              <span>Whamhalla</span> <span className="bg-red-100 px-2 py-0.5 rounded-full">{fallen.length}</span>
+              <span>Whamhalla (Ute)</span> <span className="bg-red-100 px-2 py-0.5 rounded-full">{fallen.length}</span>
             </h3>
             <div className="space-y-4 opacity-70 grayscale">
               {fallen.map(p => (
