@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import confetti from 'canvas-confetti';
 import { createClient } from '@supabase/supabase-js';
-import { User, Building, Skull, Trophy, Settings, ArrowLeft } from 'lucide-react';
+import { User, Building, Skull, Trophy, Settings, ArrowLeft, Image as ImageIcon } from 'lucide-react';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://example.supabase.co';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'example-key';
@@ -74,7 +74,7 @@ export default function GroupPage() {
       
       if (data) {
         setMyPlayerId(data.id);
-        if (initialStatus === 'alive') confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#ec4899', '#10b981', '#06b6d4'] }); // 80s Colors Confetti
+        if (initialStatus === 'alive') confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#ec4899', '#10b981', '#06b6d4'] });
       }
     }
     fetchGroupData();
@@ -120,7 +120,9 @@ export default function GroupPage() {
                   <div>
                     <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Hemmelig PIN (4 Tall)</label>
                     <input className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 font-semibold outline-none focus:border-emerald-400" value={formData.pin} onChange={e => setFormData({...formData, pin: e.target.value})} placeholder="1234" maxLength={4} required />
-                    <p className="text-[10px] text-slate-400 mt-1">Husk denne for å bruke mobilen senere!</p>
+                    <p className="text-[10px] text-slate-500 mt-1 bg-slate-100 p-2 rounded">
+                      <strong>Hvorfor PIN?</strong> Siden vi ikke bruker passord, trenger du denne koden hvis du vil logge inn på mobilen din senere.
+                    </p>
                   </div>
                 </div>
                 <div>
@@ -128,8 +130,13 @@ export default function GroupPage() {
                   <input className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 font-semibold outline-none focus:border-emerald-400" value={formData.company} onChange={e => setFormData({...formData, company: e.target.value})} placeholder="f.eks. Salg" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Profilbilde URL (Valgfritt)</label>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1 flex items-center gap-2">
+                    Profilbilde URL (Valgfritt) <ImageIcon size={12} />
+                  </label>
                   <input className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 text-sm outline-none focus:border-emerald-400" value={formData.avatar_url} onChange={e => setFormData({...formData, avatar_url: e.target.value})} placeholder="https://..." />
+                  <p className="text-[10px] text-slate-400 mt-1 italic">
+                    Tips: Høyreklikk på profilbildet ditt på LinkedIn eller Facebook og velg "Kopier bildeadresse" (Copy Image Address). Lim inn her.
+                  </p>
                 </div>
                 <div className="flex gap-3 pt-2">
                   <button className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold shadow-lg shadow-emerald-200 transition-all">
@@ -169,7 +176,11 @@ export default function GroupPage() {
             <div className="space-y-4">
               {survivors.map(p => (
                 <div key={p.id} className="flex items-center gap-4">
-                  {p.avatar_url ? <img src={p.avatar_url} className="w-10 h-10 rounded-full object-cover border-2 border-emerald-200" /> : <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold">{p.name.charAt(0)}</div>}
+                  {p.avatar_url ? (
+                    <img src={p.avatar_url} className="w-10 h-10 rounded-full object-cover border-2 border-emerald-200" onError={(e) => {e.currentTarget.style.display='none'}} />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold">{p.name.charAt(0)}</div>
+                  )}
                   <div><div className="font-bold text-slate-700">{p.name}</div>{p.company && <div className="text-xs text-slate-400 flex items-center gap-1"><Building size={10}/> {p.company}</div>}</div>
                 </div>
               ))}
@@ -182,7 +193,11 @@ export default function GroupPage() {
             <div className="space-y-4 opacity-70 grayscale">
               {fallen.map(p => (
                 <div key={p.id} className="flex items-center gap-4">
-                   {p.avatar_url ? <img src={p.avatar_url} className="w-10 h-10 rounded-full object-cover border-2 border-slate-300" /> : <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 font-bold">💀</div>}
+                   {p.avatar_url ? (
+                    <img src={p.avatar_url} className="w-10 h-10 rounded-full object-cover border-2 border-slate-300" onError={(e) => {e.currentTarget.style.display='none'}} />
+                   ) : (
+                    <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 font-bold">💀</div>
+                   )}
                   <div><div className="font-bold text-slate-600 line-through">{p.name}</div><div className="text-xs text-slate-400">{new Date(p.whammed_at).toLocaleDateString()}</div></div>
                 </div>
               ))}
