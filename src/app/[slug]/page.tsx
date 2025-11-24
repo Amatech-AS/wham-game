@@ -6,7 +6,6 @@ import { createClient } from '@supabase/supabase-js';
 import QRCode from 'react-qr-code';
 import { User, Building, Skull, Trophy, Settings, ArrowLeft, Image as ImageIcon, QrCode, Lock, Trash2, HeartPulse, Award, AlertTriangle, X } from 'lucide-react';
 
-// HARDKODEDE NØKLER
 const supabaseUrl = 'https://onjaqwdyfwlzjbutuxle.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9uamFxd2R5ZndsempidXR1eGxlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2NTcxODcsImV4cCI6MjA3OTIzMzE4N30.CW0odQLt6Cd_50wXJq4eNQGMo5jLL03YJdApxFzPyVY';
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -41,7 +40,6 @@ export default function GroupPage() {
     setGlobalUserId(uid);
 
     const today = new Date();
-    // Sjekk om det er etter 24. desember
     if (today.getMonth() === 11 && today.getDate() > 24) setGameFinished(true);
   }, []);
 
@@ -86,7 +84,6 @@ export default function GroupPage() {
 
     const uid = localStorage.getItem('wham_global_user_id');
 
-    // Klargjør data (Sikre at tomme felt blir null i databasen, ikke tomme strenger)
     const playerData = {
         name: formData.name,
         company: formData.company || null,
@@ -96,25 +93,25 @@ export default function GroupPage() {
 
     if (myPlayerId) {
       const { error } = await supabase.from('players').update(playerData).eq('id', myPlayerId);
-      if (error) { alert("Feil ved oppdatering: " + error.message); return; }
+      if (error) { alert("Feil: " + error.message); return; }
       setIsEditing(false);
     } else {
-      // Sjekk om brukeren allerede er whammet i en annen gruppe
+      // Sjekk status fra andre grupper
       const { data: existingUser } = await supabase.from('players').select('status').eq('user_id', uid).eq('status', 'whammed').limit(1);
       const initialStatus = (existingUser && existingUser.length > 0) ? 'whammed' : 'alive';
       
-      // Sett inn ny spiller
+      // Prøv å opprette (Bruk .select() for å unngå 406)
       const { data, error } = await supabase.from('players').insert([{ 
         group_slug: slug, 
         user_id: uid, 
         status: initialStatus, 
         whammed_at: (initialStatus === 'whammed' ? new Date() : null),
         ...playerData
-      }]).select(); // VIKTIG: Fjernet .single() for å unngå 406-feil
+      }]).select();
       
       if (error) {
-          console.error("Database feil:", error);
-          alert("Kunne ikke bli med. Feilmelding: " + error.message + " (Kode: " + error.code + ")");
+          console.error("DB Error:", error);
+          alert("Kunne ikke bli med: " + error.message);
           return;
       }
       
@@ -133,7 +130,7 @@ export default function GroupPage() {
 
   const confirmDeath = async () => {
     if (!deathReason) {
-        alert("Du må nesten fortelle oss hvordan det skjedde...");
+        alert("Fortell oss hvordan det skjedde!");
         return;
     }
     setIsDying(true);
@@ -183,9 +180,6 @@ export default function GroupPage() {
           </div>
         </div>
 
-        {/* --- MODALS --- */}
-
-        {/* QR MODAL */}
         {showQR && (
             <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setShowQR(false)}>
                 <div className="bg-white p-8 rounded-3xl max-w-sm w-full text-center relative" onClick={e => e.stopPropagation()}>
@@ -199,7 +193,6 @@ export default function GroupPage() {
             </div>
         )}
 
-        {/* DEATH MODAL */}
         {showDeathModal && (
             <div className="fixed inset-0 bg-red-900/90 flex items-center justify-center z-50 p-4 animate-in zoom-in-95 duration-300">
                 <div className="bg-slate-900 border-4 border-red-500 p-8 rounded-3xl max-w-md w-full text-center shadow-2xl relative overflow-hidden">
@@ -248,7 +241,6 @@ export default function GroupPage() {
             </div>
         )}
 
-        {/* DIPLOM MODAL */}
         {gameFinished && me?.status === 'alive' && (
             <div className="mb-12 bg-gradient-to-r from-yellow-100 to-amber-100 border-2 border-yellow-300 p-8 rounded-3xl shadow-xl text-center relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-red-500 via-green-500 to-red-500"></div>
@@ -263,7 +255,6 @@ export default function GroupPage() {
             </div>
         )}
 
-        {/* MAIN UI */}
         <div className="mb-12">
           {!myPlayerId || isEditing ? (
             <div className="bg-white border border-emerald-100 p-8 rounded-3xl shadow-xl shadow-emerald-100/50">
@@ -276,7 +267,7 @@ export default function GroupPage() {
                 {groupPassword && !myPlayerId && (
                     <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 mb-4">
                         <label className="block text-xs font-bold text-amber-600 uppercase mb-1 flex items-center gap-1"><Lock size={10}/> Gruppe-Passord</label>
-                        <input className="w-full bg-white border-2 border-amber-100 rounded-xl p-3 font-semibold outline-none focus:border-amber-400" type="text" value={formData.passwordAttempt} onChange={e => setFormData({...formData,passwordAttempt: e.target.value})} placeholder="Skriv passord..." />
+                        <input className="w-full bg-white border-2 border-amber-100 rounded-xl p-3 font-semibold outline-none focus:border-amber-400" type="text" value={formData.passwordAttempt} onChange={e => setFormData({...formData, passwordAttempt: e.target.value})} placeholder="Skriv passord..." />
                     </div>
                 )}
 
@@ -332,7 +323,6 @@ export default function GroupPage() {
         </div>
 
         <div className="grid md:grid-cols-2 gap-8">
-          {/* SURVIVORS */}
           <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
             <h3 className="text-emerald-600 font-bold uppercase tracking-wider text-xs mb-6 flex justify-between">
               <span>Overlevende</span> <span className="bg-emerald-100 px-2 py-0.5 rounded-full">{survivors.length}</span>
@@ -350,8 +340,6 @@ export default function GroupPage() {
               ))}
             </div>
           </div>
-          
-          {/* FALLEN */}
           <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200">
             <h3 className="text-red-500 font-bold uppercase tracking-wider text-xs mb-6 flex justify-between">
               <span>Whamhalla (Ute)</span> <span className="bg-red-100 px-2 py-0.5 rounded-full">{fallen.length}</span>
