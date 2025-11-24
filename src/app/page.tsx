@@ -8,12 +8,12 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://example.sup
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'example-key';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-type Group = { id: string; name: string; slug: string; created_at: string; has_password?: boolean }; // Note: We don't fetch the password text directly for list
+type Group = { id: string; name: string; slug: string; created_at: string; has_password?: boolean };
 type Player = { id: string; name: string; status: 'alive' | 'whammed'; whammed_at: string };
 
 export default function Home() {
   const [groupName, setGroupName] = useState('');
-  const [groupPassword, setGroupPassword] = useState(''); // Nytt felt
+  const [groupPassword, setGroupPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [activeGroups, setActiveGroups] = useState<Group[]>([]);
   const [stats, setStats] = useState({ total: 0, alive: 0 });
@@ -56,7 +56,6 @@ export default function Home() {
     }
 
     const fetchData = async () => {
-      // Henter grupper (A-Z)
       const { data: groups } = await supabase
         .from('groups')
         .select('*')
@@ -80,11 +79,10 @@ export default function Home() {
     const userId = localStorage.getItem('wham_global_user_id');
     const slug = groupName.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Math.floor(Math.random() * 1000);
     
-    // Lagrer Creator ID og Passord
     const { error } = await supabase.from('groups').insert([{ 
         name: groupName, 
         slug: slug, 
-        password: groupPassword || null, // Lagrer passord hvis det finnes
+        password: groupPassword || null,
         creator_id: userId 
     }]);
 
@@ -129,9 +127,14 @@ export default function Home() {
              </div>
            </div>
 
-           {/* 80s LOGO IS BACK */}
-           <div className="text-center pt-8 md:pt-16">
-            <h1 className="text-5xl sm:text-6xl md:text-8xl font-black italic tracking-tighter -rotate-2 transform text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400 drop-shadow-[4px_4px_0px_rgba(0,0,0,0.15)] mb-6 break-words p-2">
+           {/* 
+              LOGO FIX:
+              text-[11vw] = Skalerer flytende basert på skjermbredde på mobil.
+              md:text-8xl = Setter et tak på størrelsen på PC/iPad.
+              whitespace-nowrap = Nekter teksten å dele seg på to linjer.
+           */}
+           <div className="text-center pt-8 md:pt-16 overflow-hidden">
+            <h1 className="text-[11vw] md:text-8xl font-black italic tracking-tighter -rotate-2 transform text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400 drop-shadow-[4px_4px_0px_rgba(0,0,0,0.15)] mb-6 p-2 whitespace-nowrap">
                 WHAMAGEDDON
             </h1>
            </div>
@@ -191,7 +194,7 @@ export default function Home() {
         {/* MAIN CONTENT */}
         <div className="flex flex-col-reverse md:grid md:grid-cols-2 gap-12 items-start">
           
-          {/* CREATE CARD - Med passord */}
+          {/* CREATE CARD */}
           <div className="bg-white p-8 rounded-3xl shadow-xl shadow-emerald-100 border border-emerald-50 w-full">
             <h2 className="text-2xl font-bold mb-6 flex items-center gap-2 text-emerald-800">
               <Building2 className="text-emerald-500" /> Ny Gruppe
