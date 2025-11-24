@@ -4,8 +4,9 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import { User, Building, Settings, ArrowLeft, Save, Image as ImageIcon } from 'lucide-react';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://example.supabase.co';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'example-key';
+// HARDKODEDE NØKLER
+const supabaseUrl = 'https://onjaqwdyfwlzjbutuxle.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9uamFxd2R5ZndsempidXR1eGxlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2NTcxODcsImV4cCI6MjA3OTIzMzE4N30.CW0odQLt6Cd_50wXJq4eNQGMo5jLL03YJdApxFzPyVY';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function ProfilePage() {
@@ -16,14 +17,12 @@ export default function ProfilePage() {
   const [formData, setFormData] = useState({ name: '', company: '', avatar_url: '', pin: '' });
 
   useEffect(() => {
-    // 1. Sjekk bruker ID
     const uid = localStorage.getItem('wham_global_user_id');
     if (!uid) {
-      router.push('/'); // Send tilbake hvis ingen bruker
+      router.push('/');
       return;
     }
 
-    // 2. Hent data fra en av gruppene (profilen er lik overalt)
     const fetchData = async () => {
       const { data } = await supabase
         .from('players')
@@ -52,7 +51,6 @@ export default function ProfilePage() {
     const uid = localStorage.getItem('wham_global_user_id');
     if (!uid) return;
 
-    // Oppdater ALLE forekomster av denne brukeren i alle grupper
     const { error } = await supabase.from('players').update({
       name: formData.name,
       company: formData.company,
@@ -72,7 +70,6 @@ export default function ProfilePage() {
     <main className="min-h-screen bg-slate-50 text-slate-800 p-4 md:p-8 font-sans">
       <div className="max-w-xl mx-auto">
         
-        {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <button onClick={() => router.push('/')} className="bg-white p-2 rounded-full shadow-sm hover:shadow-md transition-all text-slate-500">
             <ArrowLeft size={20} />
@@ -80,7 +77,6 @@ export default function ProfilePage() {
           <h1 className="text-2xl font-black text-slate-900">Min Profil</h1>
         </div>
 
-        {/* Edit Card */}
         <div className="bg-white border border-slate-200 p-8 rounded-3xl shadow-xl shadow-indigo-100/50">
             <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
                 <div className="bg-indigo-100 p-3 rounded-full text-indigo-600">
@@ -119,7 +115,6 @@ export default function ProfilePage() {
                 </label>
                 <input className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 text-sm outline-none focus:border-indigo-400 transition-colors" value={formData.avatar_url} onChange={e => setFormData({...formData, avatar_url: e.target.value})} placeholder="https://..." />
                 
-                {/* Image Preview */}
                 <div className="mt-3 flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
                     {formData.avatar_url ? (
                         <img src={formData.avatar_url} className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm" onError={(e) => e.currentTarget.style.display = 'none'} />
