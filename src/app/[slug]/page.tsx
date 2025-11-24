@@ -6,8 +6,9 @@ import { createClient } from '@supabase/supabase-js';
 import QRCode from 'react-qr-code';
 import { User, Building, Skull, Trophy, Settings, ArrowLeft, Image as ImageIcon, QrCode, Lock, Trash2, HeartPulse, Award, AlertTriangle, X } from 'lucide-react';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://example.supabase.co';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'example-key';
+// HARDKODEDE NØKLER
+const supabaseUrl = 'https://onjaqwdyfwlzjbutuxle.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9uamFxd2R5ZndsempidXR1eGxlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2NTcxODcsImV4cCI6MjA3OTIzMzE4N30.CW0odQLt6Cd_50wXJq4eNQGMo5jLL03YJdApxFzPyVY';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 type Player = { id: string; user_id?: string; name: string; company?: string; avatar_url?: string; secret_pin?: string; status: 'alive' | 'whammed'; whammed_at: string; death_reason?: string };
@@ -30,7 +31,6 @@ export default function GroupPage() {
   const [showQR, setShowQR] = useState(false);
   const [gameFinished, setGameFinished] = useState(false);
 
-  // NYE STATES FOR DØDS-MODAL
   const [showDeathModal, setShowDeathModal] = useState(false);
   const [deathReason, setDeathReason] = useState('');
   const [isDying, setIsDying] = useState(false);
@@ -41,7 +41,6 @@ export default function GroupPage() {
     setGlobalUserId(uid);
 
     const today = new Date();
-    // Sjekk om det er etter 24. desember
     if (today.getMonth() === 11 && today.getDate() > 24) setGameFinished(true);
   }, []);
 
@@ -105,13 +104,11 @@ export default function GroupPage() {
     fetchGroupData();
   };
 
-  // 1. Åpne modalen i stedet for prompt
   const openDeathModal = () => {
     setDeathReason('');
     setShowDeathModal(true);
   };
 
-  // 2. Bekreft død
   const confirmDeath = async () => {
     if (!deathReason) {
         alert("Du må nesten fortelle oss hvordan det skjedde...");
@@ -164,9 +161,6 @@ export default function GroupPage() {
           </div>
         </div>
 
-        {/* --- MODALS --- */}
-
-        {/* QR MODAL */}
         {showQR && (
             <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setShowQR(false)}>
                 <div className="bg-white p-8 rounded-3xl max-w-sm w-full text-center relative" onClick={e => e.stopPropagation()}>
@@ -180,7 +174,6 @@ export default function GroupPage() {
             </div>
         )}
 
-        {/* DEATH MODAL */}
         {showDeathModal && (
             <div className="fixed inset-0 bg-red-900/90 flex items-center justify-center z-50 p-4 animate-in zoom-in-95 duration-300">
                 <div className="bg-slate-900 border-4 border-red-500 p-8 rounded-3xl max-w-md w-full text-center shadow-2xl relative overflow-hidden">
@@ -229,13 +222,11 @@ export default function GroupPage() {
             </div>
         )}
 
-        {/* DIPLOM MODAL */}
         {gameFinished && me?.status === 'alive' && (
             <div className="mb-12 bg-gradient-to-r from-yellow-100 to-amber-100 border-2 border-yellow-300 p-8 rounded-3xl shadow-xl text-center relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-red-500 via-green-500 to-red-500"></div>
                 <Award size={64} className="mx-auto text-yellow-600 mb-4" />
                 <h2 className="text-4xl font-black text-yellow-800 mb-2">GRATULERER!</h2>
-                {/* DYNAMISK ÅRSTALL HER */}
                 <p className="text-yellow-700 font-bold text-lg mb-6">Du overlevde Whamageddon {new Date().getFullYear()}</p>
                 <div className="bg-white/80 p-6 rounded-xl inline-block border border-yellow-200 rotate-1 transform">
                     <p className="font-serif text-2xl text-slate-800 italic">"{me.name}"</p>
@@ -245,7 +236,6 @@ export default function GroupPage() {
             </div>
         )}
 
-        {/* MAIN UI */}
         <div className="mb-12">
           {!myPlayerId || isEditing ? (
             <div className="bg-white border border-emerald-100 p-8 rounded-3xl shadow-xl shadow-emerald-100/50">
@@ -299,7 +289,6 @@ export default function GroupPage() {
                   <div className="inline-block p-3 bg-emerald-100 rounded-full text-emerald-600 mb-4"><Trophy size={32} /></div>
                   <h3 className="text-3xl font-black text-emerald-800 mb-1">Du er Trygg (enn så lenge)</h3>
                   <p className="text-emerald-600 mb-6 font-medium">Hold deg unna radioen!</p>
-                  {/* ENDRET: Åpner modalen i stedet for direkte action */}
                   <button onClick={openDeathModal} className="bg-white text-red-600 hover:bg-red-50 border-2 border-red-200 px-8 py-3 rounded-xl font-bold transition-all shadow-sm hover:shadow-md">JEG HØRTE DEN! 😭</button>
                 </>
               ) : (
@@ -315,7 +304,6 @@ export default function GroupPage() {
         </div>
 
         <div className="grid md:grid-cols-2 gap-8">
-          {/* SURVIVORS */}
           <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
             <h3 className="text-emerald-600 font-bold uppercase tracking-wider text-xs mb-6 flex justify-between">
               <span>Overlevende</span> <span className="bg-emerald-100 px-2 py-0.5 rounded-full">{survivors.length}</span>
@@ -333,13 +321,11 @@ export default function GroupPage() {
               ))}
             </div>
           </div>
-          
-          {/* FALLEN */}
           <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200">
             <h3 className="text-red-500 font-bold uppercase tracking-wider text-xs mb-6 flex justify-between">
               <span>Whamhalla (Ute)</span> <span className="bg-red-100 px-2 py-0.5 rounded-full">{fallen.length}</span>
             </h3>
-            <div className="space-y-4">
+            <div className="space-y-4 opacity-70 grayscale">
               {fallen.map(p => (
                 <div key={p.id} className="flex items-center gap-4 group relative">
                    {p.avatar_url ? <img src={p.avatar_url} className="w-10 h-10 rounded-full object-cover border-2 border-slate-300 grayscale" onError={(e) => {e.currentTarget.style.display='none'}} /> : <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 font-bold grayscale">💀</div>}
