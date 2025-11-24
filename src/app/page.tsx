@@ -67,13 +67,14 @@ export default function Home() {
       if (statData) setStats(statData);
 
       if (userId) {
-        // Henter kun den nyeste profilen hvis det finnes flere
+        // Bruker maybeSingle for å unngå 406 feil hvis brukeren ikke finnes i denne tabellen
         const { data: myData } = await supabase.from('players')
             .select('*')
             .eq('user_id', userId)
-            .limit(1);
+            .limit(1)
+            .maybeSingle(); // ENDRET FRA .single() eller .limit(1)
             
-        if (myData && myData.length > 0) setMyProfile(myData[0]);
+        if (myData) setMyProfile(myData);
       }
     };
     fetchData();
@@ -96,26 +97,24 @@ export default function Home() {
     else { alert('Feil ved opprettelse av gruppe'); setLoading(false); }
   };
 
-  // FIX: Gjort denne mer robust. Fjerner .single() for å unngå 406-feil.
   const handleSync = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setSyncMsg('');
 
+    // ENDRING: Bruker .maybeSingle() for å unngå 406-feil (Crash)
     const { data, error } = await supabase.from('players')
       .select('user_id')
       .eq('name', syncName)
       .eq('secret_pin', syncPin)
-      .limit(1); // Henter en liste med maks 1, i stedet for å kreve 1
+      .limit(1)
+      .maybeSingle(); 
 
     if (error) {
+        console.log(error);
         setSyncMsg('Noe gikk galt. Prøv igjen.');
-        setLoading(false);
-        return;
-    }
-
-    if (data && data.length > 0) {
-      localStorage.setItem('wham_global_user_id', data[0].user_id);
+    } else if (data) {
+      localStorage.setItem('wham_global_user_id', data.user_id);
       setSyncMsg('Suksess! Enhet synkronisert.');
       setTimeout(() => { setShowSync(false); window.location.reload(); }, 1000);
     } else {
