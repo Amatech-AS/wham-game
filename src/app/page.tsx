@@ -4,8 +4,9 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import { Users, ArrowRight, Building2, Timer, Globe, Smartphone, AlertTriangle, Trophy, Skull, UserCircle, Lock } from 'lucide-react';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://example.supabase.co';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'example-key';
+// HARDKODEDE NØKLER (Fikser CORS/Tilkobling)
+const supabaseUrl = 'https://onjaqwdyfwlzjbutuxle.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9uamFxd2R5ZndsempidXR1eGxlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2NTcxODcsImV4cCI6MjA3OTIzMzE4N30.CW0odQLt6Cd_50wXJq4eNQGMo5jLL03YJdApxFzPyVY';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 type Group = { id: string; name: string; slug: string; created_at: string; has_password?: boolean };
@@ -127,12 +128,7 @@ export default function Home() {
              </div>
            </div>
 
-           {/* 
-              LOGO FIX:
-              text-[11vw] = Skalerer flytende basert på skjermbredde på mobil.
-              md:text-8xl = Setter et tak på størrelsen på PC/iPad.
-              whitespace-nowrap = Nekter teksten å dele seg på to linjer.
-           */}
+           {/* 80s LOGO (Responsive) */}
            <div className="text-center pt-8 md:pt-16 overflow-hidden">
             <h1 className="text-[11vw] md:text-8xl font-black italic tracking-tighter -rotate-2 transform text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400 drop-shadow-[4px_4px_0px_rgba(0,0,0,0.15)] mb-6 p-2 whitespace-nowrap">
                 WHAMAGEDDON
@@ -186,7 +182,7 @@ export default function Home() {
                     Hører du sangen (radio, kjøpesenter, venn) er du <strong>ute</strong>!
                 </p>
                 <p className="text-slate-600 text-sm leading-relaxed font-bold">
-                    Ryker du ut i én gruppe, ryker du ut i ALLE.
+                    Du kan være med i så mange grupper du vil. Men husk: Ryker du ut i én gruppe, ryker du ut i ALLE.
                 </p>
             </div>
         </div>
