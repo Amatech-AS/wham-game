@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import { Users, ArrowRight, Building2, Timer, Globe, Smartphone, AlertTriangle, Trophy, Skull, UserCircle, Lock } from 'lucide-react';
 
-// HARDKODEDE NØKLER (Fikser CORS/Tilkobling)
+// HARDKODEDE NØKLER
 const supabaseUrl = 'https://onjaqwdyfwlzjbutuxle.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9uamFxd2R5ZndsempidXR1eGxlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2NTcxODcsImV4cCI6MjA3OTIzMzE4N30.CW0odQLt6Cd_50wXJq4eNQGMo5jLL03YJdApxFzPyVY';
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -67,8 +67,13 @@ export default function Home() {
       if (statData) setStats(statData);
 
       if (userId) {
-        const { data: myData } = await supabase.from('players').select('*').eq('user_id', userId).limit(1).single();
-        if (myData) setMyProfile(myData);
+        // Henter kun den nyeste profilen hvis det finnes flere
+        const { data: myData } = await supabase.from('players')
+            .select('*')
+            .eq('user_id', userId)
+            .limit(1);
+            
+        if (myData && myData.length > 0) setMyProfile(myData[0]);
       }
     };
     fetchData();
@@ -91,13 +96,26 @@ export default function Home() {
     else { alert('Feil ved opprettelse av gruppe'); setLoading(false); }
   };
 
+  // FIX: Gjort denne mer robust. Fjerner .single() for å unngå 406-feil.
   const handleSync = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setSyncMsg('');
-    const { data } = await supabase.from('players').select('user_id').eq('name', syncName).eq('secret_pin', syncPin).limit(1).single();
-    if (data && data.user_id) {
-      localStorage.setItem('wham_global_user_id', data.user_id);
+
+    const { data, error } = await supabase.from('players')
+      .select('user_id')
+      .eq('name', syncName)
+      .eq('secret_pin', syncPin)
+      .limit(1); // Henter en liste med maks 1, i stedet for å kreve 1
+
+    if (error) {
+        setSyncMsg('Noe gikk galt. Prøv igjen.');
+        setLoading(false);
+        return;
+    }
+
+    if (data && data.length > 0) {
+      localStorage.setItem('wham_global_user_id', data[0].user_id);
       setSyncMsg('Suksess! Enhet synkronisert.');
       setTimeout(() => { setShowSync(false); window.location.reload(); }, 1000);
     } else {
@@ -110,7 +128,6 @@ export default function Home() {
     <main className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-20">
       <div className="max-w-5xl mx-auto p-6">
         
-        {/* Header Area */}
         <div className="relative mb-8 md:mb-12">
            <div className="flex justify-end gap-2 mb-4 md:absolute md:top-0 md:right-0 z-20">
              <button onClick={() => router.push('/profile')} className="flex items-center gap-2 text-xs font-bold text-slate-600 bg-white px-4 py-2 rounded-full hover:bg-slate-100 transition-all border border-slate-200 shadow-sm">
@@ -128,14 +145,12 @@ export default function Home() {
              </div>
            </div>
 
-           {/* 80s LOGO (Responsive) */}
            <div className="text-center pt-8 md:pt-16 overflow-hidden">
             <h1 className="text-[11vw] md:text-8xl font-black italic tracking-tighter -rotate-2 transform text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400 drop-shadow-[4px_4px_0px_rgba(0,0,0,0.15)] mb-6 p-2 whitespace-nowrap">
                 WHAMAGEDDON
             </h1>
            </div>
 
-           {/* SYNC MODAL */}
            {showSync && (
             <div className="max-w-md mx-auto mb-8 bg-white p-6 rounded-2xl shadow-lg border border-purple-100 animate-in fade-in slide-in-from-top-4 relative z-30">
               <h3 className="text-lg font-bold mb-2 text-slate-800">Synkroniser denne enheten</h3>
@@ -152,7 +167,6 @@ export default function Home() {
            )}
         </div>
 
-        {/* MIN STATUS CARD */}
         {myProfile && (
            <div onClick={() => router.push('/profile')} className={`cursor-pointer max-w-3xl mx-auto mb-12 p-6 rounded-2xl border-2 flex items-center justify-between shadow-sm transition-transform hover:scale-[1.02] ${myProfile.status === 'alive' ? 'bg-emerald-50 border-emerald-100' : 'bg-red-50 border-red-100'}`}>
               <div>
@@ -170,7 +184,6 @@ export default function Home() {
            </div>
         )}
 
-        {/* RULES */}
         <div className="max-w-3xl mx-auto mb-12 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row gap-6 items-start">
             <div className="bg-red-50 p-3 rounded-full text-red-500 shrink-0">
                 <AlertTriangle size={24} />
@@ -187,10 +200,8 @@ export default function Home() {
             </div>
         </div>
 
-        {/* MAIN CONTENT */}
         <div className="flex flex-col-reverse md:grid md:grid-cols-2 gap-12 items-start">
           
-          {/* CREATE CARD */}
           <div className="bg-white p-8 rounded-3xl shadow-xl shadow-emerald-100 border border-emerald-50 w-full">
             <h2 className="text-2xl font-bold mb-6 flex items-center gap-2 text-emerald-800">
               <Building2 className="text-emerald-500" /> Ny Gruppe
@@ -210,7 +221,6 @@ export default function Home() {
             </form>
           </div>
 
-          {/* ACTIVE GROUPS */}
           <div className="w-full">
             <h2 className="text-2xl font-bold mb-6 flex items-center gap-2 text-slate-700">
               <Users className="text-pink-500" /> Aktive Grupper
@@ -233,7 +243,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* STATS BAR */}
         <div className="mt-16 border-t border-slate-200 pt-12">
           <div className="flex flex-wrap justify-center gap-4 md:gap-8">
             <div className="bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-3">
