@@ -6,6 +6,7 @@ import { createClient } from '@supabase/supabase-js';
 import QRCode from 'react-qr-code';
 import { User, Building, Skull, Trophy, Settings, ArrowLeft, Image as ImageIcon, QrCode, Lock, Trash2, HeartPulse, Award, AlertTriangle, X } from 'lucide-react';
 
+// HARDKODEDE NØKLER
 const supabaseUrl = 'https://onjaqwdyfwlzjbutuxle.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9uamFxd2R5ZndsempidXR1eGxlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2NTcxODcsImV4cCI6MjA3OTIzMzE4N30.CW0odQLt6Cd_50wXJq4eNQGMo5jLL03YJdApxFzPyVY';
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -44,6 +45,9 @@ export default function GroupPage() {
   }, []);
 
   const fetchGroupData = async () => {
+    const uid = localStorage.getItem('wham_global_user_id');
+
+    // 1. Hent gruppeinfo
     const { data: group } = await supabase.from('groups').select('name, password, creator_id').eq('slug', slug).single();
     if (group) {
         setGroupName(group.name);
@@ -51,12 +55,34 @@ export default function GroupPage() {
         setGroupCreatorId(group.creator_id);
     }
     
+    // 2. Hent spillere i denne gruppen
     const { data: p } = await supabase.from('players').select('*').eq('group_slug', slug).order('whammed_at', { ascending: false, nullsFirst: true });
     if (p) {
       setPlayers(p);
-      const uid = localStorage.getItem('wham_global_user_id');
+      
+      // 3. Sjekk om JEG er i denne gruppen
       const me = p.find(player => player.user_id === uid);
-      if (me) setMyPlayerId(me.id);
+      if (me) {
+          setMyPlayerId(me.id);
+      } else if (uid) {
+          // NYTT: Hvis jeg IKKE er i gruppen, hent profilen min fra en annen gruppe for å fylle ut skjemaet
+          const { data: existingProfile } = await supabase
+            .from('players')
+            .select('name, company, avatar_url, secret_pin')
+            .eq('user_id', uid)
+            .limit(1)
+            .maybeSingle();
+
+          if (existingProfile) {
+              setFormData(prev => ({
+                  ...prev,
+                  name: existingProfile.name,
+                  company: existingProfile.company || '',
+                  avatar_url: existingProfile.avatar_url || '',
+                  pin: existingProfile.secret_pin || ''
+              }));
+          }
+      }
     }
   };
 
@@ -66,6 +92,7 @@ export default function GroupPage() {
     return () => { supabase.removeChannel(channel); };
   }, [slug, globalUserId]);
 
+  // Oppdater skjema kun hvis vi redigerer en eksisterende spiller i denne gruppen
   useEffect(() => {
     if (myPlayerId && players.length > 0) {
       const me = players.find(p => p.id === myPlayerId);
@@ -96,11 +123,9 @@ export default function GroupPage() {
       if (error) { alert("Feil: " + error.message); return; }
       setIsEditing(false);
     } else {
-      // Sjekk status fra andre grupper
       const { data: existingUser } = await supabase.from('players').select('status').eq('user_id', uid).eq('status', 'whammed').limit(1);
       const initialStatus = (existingUser && existingUser.length > 0) ? 'whammed' : 'alive';
       
-      // Prøv å opprette (Bruk .select() for å unngå 406)
       const { data, error } = await supabase.from('players').insert([{ 
         group_slug: slug, 
         user_id: uid, 
@@ -180,6 +205,8 @@ export default function GroupPage() {
           </div>
         </div>
 
+        {/* --- MODALS --- */}
+
         {showQR && (
             <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200" onClick={() => setShowQR(false)}>
                 <div className="bg-white p-8 rounded-3xl max-w-sm w-full text-center relative" onClick={e => e.stopPropagation()}>
@@ -255,6 +282,7 @@ export default function GroupPage() {
             </div>
         )}
 
+        {/* MAIN UI */}
         <div className="mb-12">
           {!myPlayerId || isEditing ? (
             <div className="bg-white border border-emerald-100 p-8 rounded-3xl shadow-xl shadow-emerald-100/50">
